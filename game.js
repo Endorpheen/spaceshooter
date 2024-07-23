@@ -1,24 +1,42 @@
+// Инициализация Telegram Mini App
+const tg = window.Telegram.WebApp;
+tg.expand();
+
 // Получаем элемент canvas
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
-// Задаем размеры canvas
-canvas.width = 800;
-canvas.height = 600;
+// Адаптивные размеры canvas
+function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    // Перерасчет размеров и позиций игровых объектов при изменении размера
+    if (ship) {
+        ship.width = Math.floor(canvas.width * 0.1);
+        ship.height = Math.floor(canvas.width * 0.1);
+        ship.x = canvas.width / 2 - ship.width / 2;
+        ship.y = canvas.height - ship.height - 10;
+    }
+}
 
-// Задаем размеры и скорости объектов
-const shipWidth = 50;
-const shipHeight = 50;
-const bulletWidth = 5;
-const bulletHeight = 15;
-const enemyWidth = 40;
-const enemyHeight = 40;
-const shipSpeed = 5;
-const bulletSpeed = 7;
-const enemySpeed = 2;
+// Вызываем функцию при загрузке и изменении размера окна
+window.addEventListener('load', resizeCanvas);
+window.addEventListener('resize', resizeCanvas);
+
+// Игровые константы
+const shipWidth = Math.floor(canvas.width * 0.1);
+const shipHeight = Math.floor(canvas.width * 0.1);
+const bulletWidth = Math.floor(canvas.width * 0.01);
+const bulletHeight = Math.floor(canvas.width * 0.03);
+const enemyWidth = Math.floor(canvas.width * 0.08);
+const enemyHeight = Math.floor(canvas.width * 0.08);
+
+const shipSpeed = Math.floor(canvas.width * 0.01);
+const bulletSpeed = Math.floor(canvas.height * 0.01);
+const enemySpeed = Math.floor(canvas.height * 0.003);
 
 // Создаем корабль игрока
-const ship = {
+let ship = {
     x: canvas.width / 2 - shipWidth / 2,
     y: canvas.height - shipHeight - 10,
     width: shipWidth,
@@ -41,7 +59,6 @@ gameOverImage.src = './images/gas-kvas-com-p-oboi-s-nadpisyu-konets-igri-36.jpg'
 
 // Флаг для отслеживания загрузки изображения
 let gameOverImageLoaded = false;
-
 gameOverImage.onload = function() {
     gameOverImageLoaded = true;
 };
@@ -172,7 +189,13 @@ function draw() {
         drawText('GAME OVER', canvas.width / 2, canvas.height / 2 - 40, '48px', 'white', 'center');
         drawText(`Очки: ${score}`, canvas.width / 2, canvas.height / 2 + 20, '24px', 'white', 'center');
         drawText('Нажмите пробел для перезапуска', canvas.width / 2, canvas.height / 2 + 60, '18px', 'white', 'center');
+        drawText('Нажмите T, чтобы отправить счет в Telegram', canvas.width / 2, canvas.height / 2 + 100, '18px', 'white', 'center');
     }
+}
+
+// Функция для отправки счета в Telegram
+function sendScoreToTelegram() {
+    tg.sendData(JSON.stringify({score: score}));
 }
 
 // Игровой цикл
@@ -208,8 +231,46 @@ document.addEventListener('keydown', (event) => {
         for (let i = 0; i < 5; i++) {
             enemies.push(createEnemy());
         }
+    } else if (event.key.toLowerCase() === 't') {
+        sendScoreToTelegram();
     }
 });
+
+// Добавляем обработчик касаний для мобильных устройств
+canvas.addEventListener('touchstart', (event) => {
+    event.preventDefault();
+    if (!gameOver) {
+        const touch = event.touches[0];
+        const touchX = touch.clientX;
+        
+        if (touchX < canvas.width / 2) {
+            // Движение влево
+            ship.x = Math.max(0, ship.x - shipSpeed);
+        } else {
+            // Движение вправо
+            ship.x = Math.min(canvas.width - ship.width, ship.x + shipSpeed);
+        }
+        
+        // Стрельба при каждом касании
+        bullets.push({
+            x: ship.x + ship.width / 2 - bulletWidth / 2,
+            y: ship.y,
+            width: bulletWidth,
+            height: bulletHeight
+        });
+    } else {
+        // Перезапуск игры при касании в состоянии Game Over
+        score = 0;
+        lives = 3;
+        gameOver = false;
+        enemies = [];
+        bullets = [];
+        ship.x = canvas.width / 2 - shipWidth / 2;
+        for (let i = 0; i < 5; i++) {
+            enemies.push(createEnemy());
+        }
+    }
+}, {passive: false});
 
 // Запускаем игру
 gameLoop();
