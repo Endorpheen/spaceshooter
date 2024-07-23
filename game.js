@@ -6,43 +6,15 @@ tg.expand();
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
-// Адаптивные размеры canvas
-function resizeCanvas() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    // Перерасчет размеров и позиций игровых объектов при изменении размера
-    if (ship) {
-        ship.width = Math.floor(canvas.width * 0.1);
-        ship.height = Math.floor(canvas.width * 0.1);
-        ship.x = canvas.width / 2 - ship.width / 2;
-        ship.y = canvas.height - ship.height - 10;
-    }
-}
-
-// Вызываем функцию при загрузке и изменении размера окна
-window.addEventListener('load', resizeCanvas);
-window.addEventListener('resize', resizeCanvas);
+// Глобальные переменные для масштабирования
+let scaleX, scaleY;
 
 // Игровые константы
-const shipWidth = Math.floor(canvas.width * 0.1);
-const shipHeight = Math.floor(canvas.width * 0.1);
-const bulletWidth = Math.floor(canvas.width * 0.01);
-const bulletHeight = Math.floor(canvas.width * 0.03);
-const enemyWidth = Math.floor(canvas.width * 0.08);
-const enemyHeight = Math.floor(canvas.width * 0.08);
-
-const shipSpeed = Math.floor(canvas.width * 0.01);
-const bulletSpeed = Math.floor(canvas.height * 0.01);
-const enemySpeed = Math.floor(canvas.height * 0.003);
+let shipWidth, shipHeight, bulletWidth, bulletHeight, enemyWidth, enemyHeight;
+let shipSpeed, bulletSpeed, enemySpeed;
 
 // Создаем корабль игрока
-let ship = {
-    x: canvas.width / 2 - shipWidth / 2,
-    y: canvas.height - shipHeight - 10,
-    width: shipWidth,
-    height: shipHeight,
-    color: 'white'
-};
+let ship;
 
 // Массивы для пуль и врагов
 let bullets = [];
@@ -63,6 +35,58 @@ gameOverImage.onload = function() {
     gameOverImageLoaded = true;
 };
 
+// Функция для изменения размеров canvas и пересчета размеров объектов
+function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    scaleX = canvas.width / 800; // 800 - исходная ширина
+    scaleY = canvas.height / 600; // 600 - исходная высота
+    
+    // Пересчет размеров объектов
+    shipWidth = Math.floor(50 * scaleX);
+    shipHeight = Math.floor(50 * scaleY);
+    bulletWidth = Math.floor(5 * scaleX);
+    bulletHeight = Math.floor(15 * scaleY);
+    enemyWidth = Math.floor(40 * scaleX);
+    enemyHeight = Math.floor(40 * scaleY);
+    
+    shipSpeed = Math.floor(5 * scaleX);
+    bulletSpeed = Math.floor(7 * scaleY);
+    enemySpeed = Math.floor(2 * scaleY);
+    
+    // Обновляем корабль игрока
+    if (ship) {
+        ship.width = shipWidth;
+        ship.height = shipHeight;
+        ship.x = canvas.width / 2 - ship.width / 2;
+        ship.y = canvas.height - ship.height - 10;
+    } else {
+        ship = {
+            x: canvas.width / 2 - shipWidth / 2,
+            y: canvas.height - shipHeight - 10,
+            width: shipWidth,
+            height: shipHeight,
+            color: 'white'
+        };
+    }
+
+    // Обновляем позиции врагов
+    enemies.forEach(enemy => {
+        enemy.width = enemyWidth;
+        enemy.height = enemyHeight;
+        enemy.x = enemy.x * scaleX;
+        enemy.y = enemy.y * scaleY;
+    });
+
+    // Обновляем позиции пуль
+    bullets.forEach(bullet => {
+        bullet.width = bulletWidth;
+        bullet.height = bulletHeight;
+        bullet.x = bullet.x * scaleX;
+        bullet.y = bullet.y * scaleY;
+    });
+}
+
 // Функция для создания врагов
 function createEnemy() {
     return {
@@ -75,8 +99,11 @@ function createEnemy() {
 }
 
 // Заполняем массив врагов
-for (let i = 0; i < 5; i++) {
-    enemies.push(createEnemy());
+function initEnemies() {
+    enemies = [];
+    for (let i = 0; i < 5; i++) {
+        enemies.push(createEnemy());
+    }
 }
 
 // Функция для отрисовки прямоугольника
@@ -100,7 +127,7 @@ function update() {
     // Обновляем положение пуль
     bullets.forEach((bullet, index) => {
         bullet.y -= bulletSpeed;
-        if (bullet.y + bulletHeight < 0) {
+        if (bullet.y + bullet.height < 0) {
             bullets.splice(index, 1);
         }
     });
@@ -225,12 +252,9 @@ document.addEventListener('keydown', (event) => {
         score = 0;
         lives = 3;
         gameOver = false;
-        enemies = [];
+        initEnemies();
         bullets = [];
         ship.x = canvas.width / 2 - shipWidth / 2;
-        for (let i = 0; i < 5; i++) {
-            enemies.push(createEnemy());
-        }
     } else if (event.key.toLowerCase() === 't') {
         sendScoreToTelegram();
     }
@@ -263,14 +287,21 @@ canvas.addEventListener('touchstart', (event) => {
         score = 0;
         lives = 3;
         gameOver = false;
-        enemies = [];
+        initEnemies();
         bullets = [];
         ship.x = canvas.width / 2 - shipWidth / 2;
-        for (let i = 0; i < 5; i++) {
-            enemies.push(createEnemy());
-        }
     }
 }, {passive: false});
 
-// Запускаем игру
-gameLoop();
+// Инициализация игры
+function init() {
+    resizeCanvas();
+    initEnemies();
+    gameLoop();
+}
+
+// Запускаем игру при загрузке страницы
+window.addEventListener('load', init);
+
+// Обновляем размеры при изменении размера окна
+window.addEventListener('resize', resizeCanvas);
