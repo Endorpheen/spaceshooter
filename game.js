@@ -27,6 +27,7 @@ let score = 0;
 let lives = 3;
 let gameOver = false;
 let gameStarted = false;
+let gameLoopRunning = false;
 
 // Загружаем изображение для экрана Game Over
 const gameOverImage = new Image();
@@ -45,7 +46,10 @@ function startGame() {
     canvas.style.display = 'block';
     resizeCanvas();
     initGame();
-    gameLoop();
+    if (!gameLoopRunning) {
+        gameLoopRunning = true;
+        gameLoop();
+    }
 }
 
 // Добавляем слушатель событий на кнопку "Начать игру"
@@ -235,7 +239,7 @@ function draw() {
         
         drawText('GAME OVER', canvas.width / 2, canvas.height / 2 - 40, '48px', 'white', 'center');
         drawText(`Очки: ${score}`, canvas.width / 2, canvas.height / 2 + 20, '24px', 'white', 'center');
-        drawText('Нажмите пробел для перезапуска', canvas.width / 2, canvas.height / 2 + 60, '18px', 'white', 'center');
+        drawText('Нажмите пробел или коснитесь экрана для перезапуска', canvas.width / 2, canvas.height / 2 + 60, '18px', 'white', 'center');
         drawText('Нажмите T, чтобы отправить счет в Telegram', canvas.width / 2, canvas.height / 2 + 100, '18px', 'white', 'center');
     }
 }
@@ -251,6 +255,8 @@ function gameLoop() {
         update();
         draw();
         requestAnimationFrame(gameLoop);
+    } else {
+        gameLoopRunning = false;
     }
 }
 
@@ -270,11 +276,13 @@ document.addEventListener('keydown', (event) => {
             });
         }
     } else if (gameOver && event.key === ' ') {
-        console.log('Попытка перезапуска игры');
+        console.log('Попытка перезапуска игры (клавиатура)');
         initGame();
-        gameOver = false;
-        gameLoop();
-        console.log('Игра перезапущена');
+        if (!gameLoopRunning) {
+            gameLoopRunning = true;
+            gameLoop();
+        }
+        console.log('Игра перезапущена (клавиатура)');
     } else if (gameOver && event.key.toLowerCase() === 't') {
         sendScoreToTelegram();
     }
@@ -305,8 +313,10 @@ canvas.addEventListener('touchstart', (event) => {
     } else if (gameOver) {
         console.log('Попытка перезапуска игры (касание)');
         initGame();
-        gameOver = false;
-        gameLoop();
+        if (!gameLoopRunning) {
+            gameLoopRunning = true;
+            gameLoop();
+        }
         console.log('Игра перезапущена (касание)');
     }
 }, {passive: false});
