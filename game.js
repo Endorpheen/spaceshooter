@@ -30,7 +30,7 @@ let gameStarted = false;
 
 // Загружаем изображение для экрана Game Over
 const gameOverImage = new Image();
-gameOverImage.src = './images/gas-kvas-com-p-oboi-s-nadpisyu-konets-igri-36.jpg';
+gameOverImage.src = 'images/gas-kvas-com-p-oboi-s-nadpisyu-konets-igri-36.jpg';
 
 // Флаг для отслеживания загрузки изображения
 let gameOverImageLoaded = false;
@@ -65,6 +65,7 @@ function initGame() {
     score = 0;
     lives = 3;
     gameOver = false;
+    gameStarted = true;
 
     // Создаем начальных врагов
     for (let i = 0; i < 5; i++) {
@@ -269,9 +270,11 @@ document.addEventListener('keydown', (event) => {
             });
         }
     } else if (gameOver && event.key === ' ') {
-        // Перезапуск игры
+        console.log('Попытка перезапуска игры');
         initGame();
         gameOver = false;
+        gameLoop();
+        console.log('Игра перезапущена');
     } else if (gameOver && event.key.toLowerCase() === 't') {
         sendScoreToTelegram();
     }
@@ -300,9 +303,11 @@ canvas.addEventListener('touchstart', (event) => {
             height: bulletHeight
         });
     } else if (gameOver) {
-        // Перезапуск игры при касании в состоянии Game Over
+        console.log('Попытка перезапуска игры (касание)');
         initGame();
         gameOver = false;
+        gameLoop();
+        console.log('Игра перезапущена (касание)');
     }
 }, {passive: false});
 
