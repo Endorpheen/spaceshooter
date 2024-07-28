@@ -2,9 +2,11 @@
 const tg = window.Telegram.WebApp;
 tg.expand();
 
-// Получаем элемент canvas
+// Получаем элементы DOM
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
+const startScreen = document.getElementById('startScreen');
+const startButton = document.getElementById('startButton');
 
 // Глобальные переменные для масштабирования
 let scaleX, scaleY;
@@ -24,6 +26,7 @@ let enemies = [];
 let score = 0;
 let lives = 3;
 let gameOver = false;
+let gameStarted = false;
 
 // Загружаем изображение для экрана Game Over
 const gameOverImage = new Image();
@@ -35,14 +38,47 @@ gameOverImage.onload = function() {
     gameOverImageLoaded = true;
 };
 
-// Функция для изменения размеров canvas и пересчета размеров объектов
+// Функция для начала игры
+function startGame() {
+    gameStarted = true;
+    startScreen.style.display = 'none';
+    canvas.style.display = 'block';
+    resizeCanvas();
+    initGame();
+    gameLoop();
+}
+
+// Добавляем слушатель событий на кнопку "Начать игру"
+startButton.addEventListener('click', startGame);
+
+// Функция инициализации игры
+function initGame() {
+    ship = {
+        x: canvas.width / 2 - shipWidth / 2,
+        y: canvas.height - shipHeight - 10,
+        width: shipWidth,
+        height: shipHeight,
+        color: 'white'
+    };
+    bullets = [];
+    enemies = [];
+    score = 0;
+    lives = 3;
+    gameOver = false;
+
+    // Создаем начальных врагов
+    for (let i = 0; i < 5; i++) {
+        enemies.push(createEnemy());
+    }
+}
+
+// Функция изменения размеров canvas
 function resizeCanvas() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
-    scaleX = canvas.width / 800; // 800 - исходная ширина
-    scaleY = canvas.height / 600; // 600 - исходная высота
+    scaleX = canvas.width / 800;
+    scaleY = canvas.height / 600;
     
-    // Пересчет размеров объектов
     shipWidth = Math.floor(50 * scaleX);
     shipHeight = Math.floor(50 * scaleY);
     bulletWidth = Math.floor(5 * scaleX);
@@ -53,21 +89,12 @@ function resizeCanvas() {
     shipSpeed = Math.floor(5 * scaleX);
     bulletSpeed = Math.floor(7 * scaleY);
     enemySpeed = Math.floor(2 * scaleY);
-    
-    // Обновляем корабль игрока
+
     if (ship) {
         ship.width = shipWidth;
         ship.height = shipHeight;
         ship.x = canvas.width / 2 - ship.width / 2;
         ship.y = canvas.height - ship.height - 10;
-    } else {
-        ship = {
-            x: canvas.width / 2 - shipWidth / 2,
-            y: canvas.height - shipHeight - 10,
-            width: shipWidth,
-            height: shipHeight,
-            color: 'white'
-        };
     }
 
     // Обновляем позиции врагов
@@ -96,14 +123,6 @@ function createEnemy() {
         height: enemyHeight,
         color: 'red'
     };
-}
-
-// Заполняем массив врагов
-function initEnemies() {
-    enemies = [];
-    for (let i = 0; i < 5; i++) {
-        enemies.push(createEnemy());
-    }
 }
 
 // Функция для отрисовки прямоугольника
@@ -227,14 +246,16 @@ function sendScoreToTelegram() {
 
 // Игровой цикл
 function gameLoop() {
-    update();
-    draw();
-    requestAnimationFrame(gameLoop);
+    if (gameStarted && !gameOver) {
+        update();
+        draw();
+        requestAnimationFrame(gameLoop);
+    }
 }
 
 // Обработчик нажатия клавиш
 document.addEventListener('keydown', (event) => {
-    if (!gameOver) {
+    if (gameStarted && !gameOver) {
         if (event.key === 'ArrowLeft' && ship.x > 0) {
             ship.x -= shipSpeed;
         } else if (event.key === 'ArrowRight' && ship.x < canvas.width - ship.width) {
@@ -247,15 +268,11 @@ document.addEventListener('keydown', (event) => {
                 height: bulletHeight
             });
         }
-    } else if (event.key === ' ') {
+    } else if (gameOver && event.key === ' ') {
         // Перезапуск игры
-        score = 0;
-        lives = 3;
+        initGame();
         gameOver = false;
-        initEnemies();
-        bullets = [];
-        ship.x = canvas.width / 2 - shipWidth / 2;
-    } else if (event.key.toLowerCase() === 't') {
+    } else if (gameOver && event.key.toLowerCase() === 't') {
         sendScoreToTelegram();
     }
 });
@@ -263,7 +280,7 @@ document.addEventListener('keydown', (event) => {
 // Добавляем обработчик касаний для мобильных устройств
 canvas.addEventListener('touchstart', (event) => {
     event.preventDefault();
-    if (!gameOver) {
+    if (gameStarted && !gameOver) {
         const touch = event.touches[0];
         const touchX = touch.clientX;
         
@@ -282,26 +299,18 @@ canvas.addEventListener('touchstart', (event) => {
             width: bulletWidth,
             height: bulletHeight
         });
-    } else {
+    } else if (gameOver) {
         // Перезапуск игры при касании в состоянии Game Over
-        score = 0;
-        lives = 3;
+        initGame();
         gameOver = false;
-        initEnemies();
-        bullets = [];
-        ship.x = canvas.width / 2 - shipWidth / 2;
     }
 }, {passive: false});
 
-// Инициализация игры
-function init() {
-    resizeCanvas();
-    initEnemies();
-    gameLoop();
-}
-
-// Запускаем игру при загрузке страницы
-window.addEventListener('load', init);
-
-// Обновляем размеры при изменении размера окна
+// Обработчик изменения размера окна
 window.addEventListener('resize', resizeCanvas);
+
+// Инициализация при загрузке страницы
+window.addEventListener('load', () => {
+    resizeCanvas();
+    // Начальный экран уже отображается благодаря HTML структуре
+});

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Космический бой</title>
+    <title>Космический Страж: Последний Рубеж</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body {
@@ -15,13 +15,53 @@
             overflow: hidden;
         }
         #gameCanvas {
-            display: block;
+            display: none;
             width: 100%;
             height: 100vh;
+        }
+        #startScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: url('images/space-background.jpg') no-repeat center center fixed;
+            background-size: cover;
+        }
+        #storyText {
+            width: 80%;
+            max-width: 600px;
+            text-align: center;
+            font-size: 18px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        #startButton {
+            padding: 10px 20px;
+            font-size: 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        #startButton:hover {
+            background-color: #45a049;
         }
     </style>
 </head>
 <body>
+    <div id="startScreen">
+        <div id="storyText">
+            <h1>Космический Страж: Последний Рубеж</h1>
+            <p>Год 2184. Человечество достигло звезд, но столкнулось с угрозой от древней инопланетной расы Зоргонов. Вы - лучший пилот Земного Альянса, управляющий уникальным истребителем "Феникс". Ваша миссия - защитить человечество и остановить вторжение Зоргонов.</p>
+        </div>
+        <button id="startButton">Начать игру</button>
+    </div>
     <canvas id="gameCanvas"></canvas>
     <script src="game.js"></script>
 </body>
