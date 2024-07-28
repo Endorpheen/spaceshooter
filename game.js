@@ -136,12 +136,35 @@ function drawRect(x, y, width, height, color) {
     ctx.fillRect(x, y, width, height);
 }
 
-// Функция для отрисовки текста
-function drawText(text, x, y, fontSize = '20px', color = 'white', align = 'left') {
+// Обновленная функция для отрисовки текста
+function drawText(text, x, y, fontSize = '20px', color = 'white', align = 'left', maxWidth = canvas.width) {
     ctx.font = `${fontSize} Arial`;
     ctx.fillStyle = color;
     ctx.textAlign = align;
-    ctx.fillText(text, x, y);
+    
+    let words = text.split(' ');
+    let line = '';
+    let lineHeight = parseInt(fontSize) * 1.2;
+    
+    for(let n = 0; n < words.length; n++) {
+        let testLine = line + words[n] + ' ';
+        let metrics = ctx.measureText(testLine);
+        let testWidth = metrics.width;
+        if (testWidth > maxWidth && n > 0) {
+            ctx.fillText(line, x, y);
+            line = words[n] + ' ';
+            y += lineHeight;
+        }
+        else {
+            line = testLine;
+        }
+    }
+    ctx.fillText(line, x, y);
+}
+
+// Функция для получения адаптивного размера шрифта
+function getFontSize() {
+    return Math.max(12, Math.floor(canvas.width / 30)) + 'px';
 }
 
 // Функция для обновления состояния игры
@@ -237,10 +260,10 @@ function draw() {
         ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
-        drawText('GAME OVER', canvas.width / 2, canvas.height / 2 - 40, '48px', 'white', 'center');
-        drawText(`Очки: ${score}`, canvas.width / 2, canvas.height / 2 + 20, '24px', 'white', 'center');
-        drawText('Нажмите пробел или коснитесь экрана для перезапуска', canvas.width / 2, canvas.height / 2 + 60, '18px', 'white', 'center');
-        drawText('Нажмите T, чтобы отправить счет в Telegram', canvas.width / 2, canvas.height / 2 + 100, '18px', 'white', 'center');
+        drawText('GAME OVER', canvas.width / 2, canvas.height / 2 - 60, '48px', 'white', 'center');
+        drawText(`Очки: ${score}`, canvas.width / 2, canvas.height / 2, '24px', 'white', 'center');
+        drawText('Нажмите пробел или коснитесь экрана для перезапуска', canvas.width / 2, canvas.height / 2 + 40, getFontSize(), 'white', 'center', canvas.width * 0.8);
+        drawText('Нажмите T, чтобы отправить счет в Telegram', canvas.width / 2, canvas.height / 2 + 80, getFontSize(), 'white', 'center', canvas.width * 0.8);
     }
 }
 
