@@ -8,27 +8,11 @@ const ctx = canvas.getContext('2d');
 const startScreen = document.getElementById('startScreen');
 const startButton = document.getElementById('startButton');
 
-// Добавляем элемент аудио
+// Аудио элементы
 const introMusic = document.getElementById('introMusic');
+const gameOverMusic = document.getElementById('gameOverMusic');
+const shotSound = document.getElementById('shotSound');
 let isMusicPlaying = false;
-
-// Функция для воспроизведения музыки
-function playMusic() {
-    if (!isMusicPlaying) {
-        introMusic.play().then(() => {
-            isMusicPlaying = true;
-        }).catch(error => {
-            console.error("Ошибка воспроизведения музыки:", error);
-        });
-    }
-}
-
-// Функция для остановки музыки
-function stopMusic() {
-    introMusic.pause();
-    introMusic.currentTime = 0;
-    isMusicPlaying = false;
-}
 
 // Глобальные переменные для масштабирования
 let scaleX, scaleY;
@@ -51,15 +35,38 @@ let gameOver = false;
 let gameStarted = false;
 let gameLoopRunning = false;
 
-// Загружаем изображение для экрана Game Over
-const gameOverImage = new Image();
-gameOverImage.src = 'images/gas-kvas-com-p-oboi-s-nadpisyu-konets-igri-36.jpg';
+// Функция для воспроизведения вступительной музыки
+function playIntroMusic() {
+    if (!isMusicPlaying) {
+        introMusic.play().then(() => {
+            isMusicPlaying = true;
+        }).catch(error => {
+            console.error("Ошибка воспроизведения музыки:", error);
+        });
+    }
+}
 
-// Флаг для отслеживания загрузки изображения
-let gameOverImageLoaded = false;
-gameOverImage.onload = function() {
-    gameOverImageLoaded = true;
-};
+// Функция для остановки вступительной музыки
+function stopIntroMusic() {
+    introMusic.pause();
+    introMusic.currentTime = 0;
+    isMusicPlaying = false;
+}
+
+// Функция для воспроизведения музыки Game Over
+function playGameOverMusic() {
+    gameOverMusic.play().catch(error => {
+        console.error("Ошибка воспроизведения музыки Game Over:", error);
+    });
+}
+
+// Функция для воспроизведения звука выстрела
+function playShotSound() {
+    shotSound.currentTime = 0;
+    shotSound.play().catch(error => {
+        console.error("Ошибка воспроизведения звука выстрела:", error);
+    });
+}
 
 // Функция для начала игры
 function startGame() {
@@ -72,14 +79,8 @@ function startGame() {
         gameLoopRunning = true;
         gameLoop();
     }
-    stopMusic(); // Останавливаем музыку при начале игры
+    playIntroMusic();
 }
-
-// Добавляем слушатель событий на кнопку "Начать игру"
-startButton.addEventListener('click', () => {
-    startGame();
-    playMusic(); // Начинаем воспроизведение музыки при нажатии кнопки
-});
 
 // Функция инициализации игры
 function initGame() {
@@ -162,7 +163,7 @@ function drawRect(x, y, width, height, color) {
     ctx.fillRect(x, y, width, height);
 }
 
-// Обновленная функция для отрисовки текста
+// Функция для отрисовки текста
 function drawText(text, x, y, fontSize = '20px', color = 'white', align = 'left', maxWidth = canvas.width) {
     ctx.font = `${fontSize} Arial`;
     ctx.fillStyle = color;
@@ -195,7 +196,13 @@ function getFontSize() {
 
 // Функция для обновления состояния игры
 function update() {
-    if (gameOver) return;
+    if (gameOver) {
+        if (isMusicPlaying) {
+            stopIntroMusic();
+            playGameOverMusic();
+        }
+        return;
+    }
 
     // Обновляем положение пуль
     bullets.forEach((bullet, index) => {
@@ -274,21 +281,12 @@ function draw() {
         drawText(`Жизни: ${lives}`, 10, 60);
     } else {
         // Отрисовываем экран Game Over
-        if (gameOverImageLoaded) {
-            ctx.drawImage(gameOverImage, 0, 0, canvas.width, canvas.height);
-        } else {
-            // Если изображение не загрузилось, рисуем черный фон
-            ctx.fillStyle = 'black';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-        }
-        
-        // Полупрозрачный слой поверх изображения
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
         drawText('GAME OVER', canvas.width / 2, canvas.height / 2 - 60, '48px', 'white', 'center');
         drawText(`Очки: ${score}`, canvas.width / 2, canvas.height / 2, '24px', 'white', 'center');
-        drawText('Нажмите пробел или коснитесь экрана для перезапуска', canvas.width / 2, canvas.height / 2 + 40, getFontSize(), 'white', 'center', canvas.width * 0.8);
+        drawText('Нажмите пробел для перезапуска', canvas.width / 2, canvas.height / 2 + 40, getFontSize(), 'white', 'center', canvas.width * 0.8);
         drawText('Нажмите T, чтобы отправить счет в Telegram', canvas.width / 2, canvas.height / 2 + 80, getFontSize(), 'white', 'center', canvas.width * 0.8);
     }
 }
@@ -309,6 +307,17 @@ function gameLoop() {
     }
 }
 
+// Функция выстрела
+function shoot() {
+    bullets.push({
+        x: ship.x + ship.width / 2 - bulletWidth / 2,
+        y: ship.y,
+        width: bulletWidth,
+        height: bulletHeight
+    });
+    playShotSound();
+}
+
 // Обработчик нажатия клавиш
 document.addEventListener('keydown', (event) => {
     if (gameStarted && !gameOver) {
@@ -317,21 +326,10 @@ document.addEventListener('keydown', (event) => {
         } else if (event.key === 'ArrowRight' && ship.x < canvas.width - ship.width) {
             ship.x += shipSpeed;
         } else if (event.key === ' ') {
-            bullets.push({
-                x: ship.x + ship.width / 2 - bulletWidth / 2,
-                y: ship.y,
-                width: bulletWidth,
-                height: bulletHeight
-            });
+            shoot();
         }
     } else if (gameOver && event.key === ' ') {
-        console.log('Попытка перезапуска игры (клавиатура)');
-        initGame();
-        if (!gameLoopRunning) {
-            gameLoopRunning = true;
-            gameLoop();
-        }
-        console.log('Игра перезапущена (клавиатура)');
+        startGame();
     } else if (gameOver && event.key.toLowerCase() === 't') {
         sendScoreToTelegram();
     }
@@ -353,25 +351,17 @@ canvas.addEventListener('touchstart', (event) => {
         }
         
         // Стрельба при каждом касании
-        bullets.push({
-            x: ship.x + ship.width / 2 - bulletWidth / 2,
-            y: ship.y,
-            width: bulletWidth,
-            height: bulletHeight
-        });
+        shoot();
     } else if (gameOver) {
-        console.log('Попытка перезапуска игры (касание)');
-        initGame();
-        if (!gameLoopRunning) {
-            gameLoopRunning = true;
-            gameLoop();
-        }
-        console.log('Игра перезапущена (касание)');
+        startGame();
     }
 }, {passive: false});
 
 // Обработчик изменения размера окна
 window.addEventListener('resize', resizeCanvas);
+
+// Добавляем слушатель событий на кнопку "Начать игру"
+startButton.addEventListener('click', startGame);
 
 // Инициализация при загрузке страницы
 window.addEventListener('load', () => {
@@ -380,4 +370,4 @@ window.addEventListener('load', () => {
 });
 
 // Добавляем обработчик для воспроизведения музыки при первом взаимодействии с страницей
-window.addEventListener('click', playMusic);
+window.addEventListener('click', playIntroMusic, { once: true });
