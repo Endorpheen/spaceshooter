@@ -22,6 +22,16 @@ shipImage.onload = function() {
     shipImageLoaded = true;
 };
 
+// Загружаем изображение врага
+const enemyImage = new Image();
+enemyImage.src = 'images/enemy.png'; // Укажите путь к вашему изображению врага
+
+// Флаг для отслеживания загрузки изображения врага
+let enemyImageLoaded = false;
+enemyImage.onload = function() {
+    enemyImageLoaded = true;
+};
+
 // Получаем элементы DOM
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
@@ -197,9 +207,10 @@ function createEnemy() {
         y: -enemyHeight,
         width: enemyWidth,
         height: enemyHeight,
-        color: 'red'
+        // Убираем свойство color, так как больше не нужно
     };
 }
+
 
 // Функция для отрисовки прямоугольника
 function drawRect(x, y, width, height, color) {
@@ -289,11 +300,10 @@ function draw() {
     // Очищаем canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Отрисовываем фон, если изображение загружено
+    // Отрисовываем фон
     if (backgroundImageLoaded) {
         ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
     } else {
-        // Если изображение не загружено, можно отрисовать черный фон
         ctx.fillStyle = 'black';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
@@ -313,22 +323,25 @@ function draw() {
 
         // Отрисовываем врагов
         enemies.forEach(enemy => {
-            drawRect(enemy.x, enemy.y, enemy.width, enemy.height, enemy.color);
+            if (enemyImageLoaded) {
+                ctx.drawImage(enemyImage, enemy.x, enemy.y, enemy.width, enemy.height);
+            } else {
+                drawRect(enemy.x, enemy.y, enemy.width, enemy.height, 'red'); // Временно для отладки
+            }
         });
 
         // Отрисовываем счет и жизни
         drawText(`Очки: ${score}`, 10, 30);
         drawText(`Жизни: ${lives}`, 10, 60);
     } else {
-        // Отрисовываем фон для экрана Game Over, если изображение загружено
+        // Отрисовываем фон для экрана Game Over
         if (gameOverImageLoaded) {
             ctx.drawImage(gameOverImage, 0, 0, canvas.width, canvas.height);
         } else {
-            // Если изображение не загружено, используем черный фон как запасной вариант
             ctx.fillStyle = 'black';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
-        
+
         // Отрисовываем текст поверх фона
         drawText('GAME OVER', canvas.width / 2, canvas.height / 2 - 60, '48px', 'white', 'center');
         drawText(`Очки: ${score}`, canvas.width / 2, canvas.height / 2, '24px', 'white', 'center');
@@ -336,6 +349,7 @@ function draw() {
         drawText('Нажмите T, чтобы отправить счет в Telegram', canvas.width / 2, canvas.height / 2 + 80, getFontSize(), 'white', 'center');
     }
 }
+
 
 
 
