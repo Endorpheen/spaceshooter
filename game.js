@@ -56,6 +56,16 @@ function playIntroMusic() {
     }
 }
 
+// Загружаем изображение для экрана Game Over
+const gameOverImage = new Image();
+gameOverImage.src = 'images/gas-kvas-com-p-oboi-s-nadpisyu-konets-igri-36.jpg';
+
+// Флаг для отслеживания загрузки изображения
+let gameOverImageLoaded = false;
+gameOverImage.onload = function() {
+    gameOverImageLoaded = true;
+};
+
 // Функция для остановки вступительной музыки
 function stopIntroMusic() {
     console.log('Stopping Intro music');
@@ -278,15 +288,28 @@ function draw() {
         drawText(`Жизни: ${lives}`, 10, 60);
     } else {
         // Отрисовываем экран Game Over
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
-        drawText('GAME OVER', canvas.width / 2, canvas.height / 2 - 60, '48px', 'white', 'center');
-        drawText(`Очки: ${score}`, canvas.width / 2, canvas.height / 2, '24px', 'white', 'center');
-        drawText('Нажмите пробел для перезапуска', canvas.width / 2, canvas.height / 2 + 40, getFontSize(), 'white', 'center');
-        drawText('Нажмите T, чтобы отправить счет в Telegram', canvas.width / 2, canvas.height / 2 + 80, getFontSize(), 'white', 'center');
+        if (gameOverImageLoaded) {
+            // Отрисовываем изображение Game Over
+            ctx.drawImage(gameOverImage, 0, 0, canvas.width, canvas.height);
+
+            // Отрисовываем текст поверх изображения
+            drawText('GAME OVER', canvas.width / 2, canvas.height / 2 - 60, '48px', 'white', 'center');
+            drawText(`Очки: ${score}`, canvas.width / 2, canvas.height / 2, '24px', 'white', 'center');
+            drawText('Нажмите пробел для перезапуска', canvas.width / 2, canvas.height / 2 + 40, getFontSize(), 'white', 'center');
+            drawText('Нажмите T, чтобы отправить счет в Telegram', canvas.width / 2, canvas.height / 2 + 80, getFontSize(), 'white', 'center');
+        } else {
+            // Если изображение еще не загружено, просто показываем текст
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            drawText('GAME OVER', canvas.width / 2, canvas.height / 2 - 60, '48px', 'white', 'center');
+            drawText(`Очки: ${score}`, canvas.width / 2, canvas.height / 2, '24px', 'white', 'center');
+            drawText('Нажмите пробел для перезапуска', canvas.width / 2, canvas.height / 2 + 40, getFontSize(), 'white', 'center');
+            drawText('Нажмите T, чтобы отправить счет в Telegram', canvas.width / 2, canvas.height / 2 + 80, getFontSize(), 'white', 'center');
+        }
     }
 }
+
 
 // Функция для отправки счета в Telegram
 function sendScoreToTelegram() {
