@@ -136,12 +136,35 @@ function drawRect(x, y, width, height, color) {
     ctx.fillRect(x, y, width, height);
 }
 
-// Функция для отрисовки текста
-function drawText(text, x, y, fontSize, color = 'white', align = 'center') {
+// Обновленная функция для отрисовки текста
+function drawText(text, x, y, fontSize = '20px', color = 'white', align = 'left', maxWidth = canvas.width) {
     ctx.font = `${fontSize} Arial`;
     ctx.fillStyle = color;
     ctx.textAlign = align;
-    ctx.fillText(text, x, y);
+    
+    let words = text.split(' ');
+    let line = '';
+    let lineHeight = parseInt(fontSize) * 1.2;
+    
+    for(let n = 0; n < words.length; n++) {
+        let testLine = line + words[n] + ' ';
+        let metrics = ctx.measureText(testLine);
+        let testWidth = metrics.width;
+        if (testWidth > maxWidth && n > 0) {
+            ctx.fillText(line, x, y);
+            line = words[n] + ' ';
+            y += lineHeight;
+        }
+        else {
+            line = testLine;
+        }
+    }
+    ctx.fillText(line, x, y);
+}
+
+// Функция для получения адаптивного размера шрифта
+function getFontSize() {
+    return Math.max(12, Math.floor(canvas.width / 30)) + 'px';
 }
 
 // Функция для обновления состояния игры
@@ -221,13 +244,14 @@ function draw() {
         });
 
         // Отрисовываем счет и жизни
-        drawText(`Очки: ${score}`, 10, 30, '20px', 'white', 'left');
-        drawText(`Жизни: ${lives}`, 10, 60, '20px', 'white', 'left');
+        drawText(`Очки: ${score}`, 10, 30);
+        drawText(`Жизни: ${lives}`, 10, 60);
     } else {
         // Отрисовываем экран Game Over
         if (gameOverImageLoaded) {
             ctx.drawImage(gameOverImage, 0, 0, canvas.width, canvas.height);
         } else {
+            // Если изображение не загрузилось, рисуем черный фон
             ctx.fillStyle = 'black';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
@@ -236,17 +260,10 @@ function draw() {
         ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
-        // Адаптивный размер шрифта
-        let largeFontSize = Math.max(24, Math.floor(canvas.width / 20)) + 'px';
-        let mediumFontSize = Math.max(18, Math.floor(canvas.width / 30)) + 'px';
-        let smallFontSize = Math.max(14, Math.floor(canvas.width / 40)) + 'px';
-
-        drawText('GAME OVER', canvas.width / 2, canvas.height / 2 - canvas.height / 8, largeFontSize);
-        drawText(`Очки: ${score}`, canvas.width / 2, canvas.height / 2, mediumFontSize);
-        
-        // Иконки и краткие инструкции
-        drawText('🔄 Рестарт', canvas.width / 2, canvas.height / 2 + canvas.height / 8, smallFontSize);
-        drawText('📤 Отправить счет', canvas.width / 2, canvas.height / 2 + canvas.height / 6, smallFontSize);
+        drawText('GAME OVER', canvas.width / 2, canvas.height / 2 - 60, '48px', 'white', 'center');
+        drawText(`Очки: ${score}`, canvas.width / 2, canvas.height / 2, '24px', 'white', 'center');
+        drawText('Нажмите пробел или коснитесь экрана для перезапуска', canvas.width / 2, canvas.height / 2 + 40, getFontSize(), 'white', 'center', canvas.width * 0.8);
+        drawText('Нажмите T, чтобы отправить счет в Telegram', canvas.width / 2, canvas.height / 2 + 80, getFontSize(), 'white', 'center', canvas.width * 0.8);
     }
 }
 
@@ -281,7 +298,7 @@ document.addEventListener('keydown', (event) => {
                 height: bulletHeight
             });
         }
-    } else if (gameOver && (event.key === ' ' || event.key === 'r' || event.key === 'R')) {
+    } else if (gameOver && event.key === ' ') {
         console.log('Попытка перезапуска игры (клавиатура)');
         initGame();
         if (!gameLoopRunning) {
@@ -289,12 +306,12 @@ document.addEventListener('keydown', (event) => {
             gameLoop();
         }
         console.log('Игра перезапущена (клавиатура)');
-    } else if (gameOver && (event.key.toLowerCase() === 't' || event.key === 'Enter')) {
+    } else if (gameOver && event.key.toLowerCase() === 't') {
         sendScoreToTelegram();
     }
 });
 
-// Обработчик касаний для мобильных устройств
+// Добавляем обработчик касаний для мобильных устройств
 canvas.addEventListener('touchstart', (event) => {
     event.preventDefault();
     if (gameStarted && !gameOver) {
@@ -317,22 +334,13 @@ canvas.addEventListener('touchstart', (event) => {
             height: bulletHeight
         });
     } else if (gameOver) {
-        const touch = event.touches[0];
-        const touchY = touch.clientY;
-        
-        if (touchY > canvas.height / 2) {
-            if (touchY < canvas.height / 2 + canvas.height / 7) {
-                console.log('Попытка перезапуска игры (касание)');
-                initGame();
-                if (!gameLoopRunning) {
-                    gameLoopRunning = true;
-                    gameLoop();
-                }
-                console.log('Игра перезапущена (касание)');
-            } else {
-                sendScoreToTelegram();
-            }
+        console.log('Попытка перезапуска игры (касание)');
+        initGame();
+        if (!gameLoopRunning) {
+            gameLoopRunning = true;
+            gameLoop();
         }
+        console.log('Игра перезапущена (касание)');
     }
 }, {passive: false});
 
