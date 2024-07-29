@@ -2,6 +2,16 @@
 const tg = window.Telegram.WebApp;
 tg.expand();
 
+// Загружаем изображение космического корабля
+const shipImage = new Image();
+shipImage.src = 'images/ship.png'; // Укажите путь к вашему изображению космического корабля
+
+// Флаг для отслеживания загрузки изображения космического корабля
+let shipImageLoaded = false;
+shipImage.onload = function() {
+    shipImageLoaded = true;
+};
+
 // Получаем элементы DOM
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
@@ -271,7 +281,13 @@ function draw() {
 
     if (!gameOver) {
         // Отрисовываем корабль игрока
-        drawRect(ship.x, ship.y, ship.width, ship.height, ship.color);
+        if (shipImageLoaded) {
+            // Отрисовываем изображение космического корабля
+            ctx.drawImage(shipImage, ship.x, ship.y, ship.width, ship.height);
+        } else {
+            // Если изображение не загружено, показываем прямоугольник
+            drawRect(ship.x, ship.y, ship.width, ship.height, ship.color);
+        }
 
         // Отрисовываем пули
         bullets.forEach(bullet => {
