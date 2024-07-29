@@ -4,32 +4,40 @@ tg.expand();
 
 // Загружаем изображение космического корабля
 const shipImage = new Image();
-shipImage.src = 'images/ship.png'; // Укажите путь к вашему изображению космического корабля
+shipImage.src = 'images/ship.png';
 
 // Загружаем изображение фона
 const backgroundImage = new Image();
-backgroundImage.src = 'images/background.jpg'; // Укажите путь к вашему изображению космического фона
+backgroundImage.src = 'images/background.jpg';
 
-// Флаг для отслеживания загрузки изображения фона
+// Загружаем изображение врага
+const enemyImage = new Image();
+enemyImage.src = 'images/enemy.png';
+
+// Загружаем изображение для экрана Game Over
+const gameOverImage = new Image();
+gameOverImage.src = 'images/gas-kvas-com-p-oboi-s-nadpisyu-konets-igri-36.jpg';
+
+// Флаги для отслеживания загрузки изображений
 let backgroundImageLoaded = false;
+let shipImageLoaded = false;
+let enemyImageLoaded = false;
+let gameOverImageLoaded = false;
+
 backgroundImage.onload = function() {
     backgroundImageLoaded = true;
 };
 
-// Флаг для отслеживания загрузки изображения космического корабля
-let shipImageLoaded = false;
 shipImage.onload = function() {
     shipImageLoaded = true;
 };
 
-// Загружаем изображение врага
-const enemyImage = new Image();
-enemyImage.src = 'images/enemy.png'; // Укажите путь к вашему изображению врага
-
-// Флаг для отслеживания загрузки изображения врага
-let enemyImageLoaded = false;
 enemyImage.onload = function() {
     enemyImageLoaded = true;
+};
+
+gameOverImage.onload = function() {
+    gameOverImageLoaded = true;
 };
 
 // Получаем элементы DOM
@@ -43,14 +51,6 @@ const introMusic = document.getElementById('introMusic');
 const gameOverMusic = document.getElementById('gameOverMusic');
 const shotSound = document.getElementById('shotSound');
 let isMusicPlaying = false;
-
-// Отладка загрузки аудио
-introMusic.addEventListener('canplaythrough', () => console.log('Intro music loaded'));
-introMusic.addEventListener('error', () => console.error('Error loading Intro music'));
-gameOverMusic.addEventListener('canplaythrough', () => console.log('Game Over music loaded'));
-gameOverMusic.addEventListener('error', () => console.error('Error loading Game Over music'));
-shotSound.addEventListener('canplaythrough', () => console.log('Shot sound loaded'));
-shotSound.addEventListener('error', () => console.error('Error loading Shot sound'));
 
 // Глобальные переменные для масштабирования
 let scaleX, scaleY;
@@ -73,6 +73,14 @@ let gameOver = false;
 let gameStarted = false;
 let gameLoopRunning = false;
 
+// Переменные для усилений
+let powerUps = [];
+let powerUpChance = 0.005; // 0.5% шанс появления усиления на каждом кадре
+let powerUpDuration = 5000; // 5 секунд
+let isSpeedBoostActive = false;
+let speedBoostFactor = 2; // Удвоение скорости при активации
+let normalShipSpeed;
+
 // Функция для воспроизведения вступительной музыки
 function playIntroMusic() {
     if (!isMusicPlaying) {
@@ -85,16 +93,6 @@ function playIntroMusic() {
         });
     }
 }
-
-// Загружаем изображение для экрана Game Over
-const gameOverImage = new Image();
-gameOverImage.src = 'images/gas-kvas-com-p-oboi-s-nadpisyu-konets-igri-36.jpg';
-
-// Флаг для отслеживания загрузки изображения
-let gameOverImageLoaded = false;
-gameOverImage.onload = function() {
-    gameOverImageLoaded = true;
-};
 
 // Функция для остановки вступительной музыки
 function stopIntroMusic() {
@@ -148,6 +146,7 @@ function initGame() {
     };
     bullets = [];
     enemies = [];
+    powerUps = [];
     score = 0;
     lives = 3;
     gameOver = false;
@@ -207,10 +206,41 @@ function createEnemy() {
         y: -enemyHeight,
         width: enemyWidth,
         height: enemyHeight,
-        // Убираем свойство color, так как больше не нужно
     };
 }
 
+// Функция для создания усиления
+function createPowerUp() {
+    return {
+        x: Math.random() * (canvas.width - 30),
+        y: -30,
+        width: 30,
+        height: 30,
+        type: 'speedBoost',
+        speed: 2
+    };
+}
+
+// Функция для обработки сбора усиления
+function collectPowerUp(powerUp) {
+    if (powerUp.type === 'speedBoost') {
+        activateSpeedBoost();
+    }
+    // Добавьте больше типов усилений здесь в будущем
+}
+
+// Функция для активации ускорения
+function activateSpeedBoost() {
+    if (!isSpeedBoostActive) {
+        normalShipSpeed = shipSpeed;
+        shipSpeed *= speedBoostFactor;
+        isSpeedBoostActive = true;
+        setTimeout(() => {
+            shipSpeed = normalShipSpeed;
+            isSpeedBoostActive = false;
+        }, powerUpDuration);
+    }
+}
 
 // Функция для отрисовки прямоугольника
 function drawRect(x, y, width, height, color) {
@@ -289,6 +319,32 @@ function update() {
         }
     });
 
+    // Обновление усилений
+    powerUps.forEach((powerUp, index) => {
+        powerUp.y += powerUp.speed;
+        
+        // Проверка столкновения с игроком
+        if (
+            ship.x < powerUp.x + powerUp.width &&
+            ship.x + ship.width > powerUp.x &&
+            ship.y < powerUp.y + powerUp.height &&
+            ship.y + ship.height > powerUp.y
+        ) {
+            collectPowerUp(powerUp);
+            powerUps.splice(index, 1);
+        }
+        
+        // Удаление усиления, если оно вышло за пределы экрана
+        if (powerUp.y > canvas.height) {
+            powerUps.splice(index, 1);
+        }
+    });
+
+    // Появление новых усилений
+    if (Math.random() < powerUpChance) {
+        powerUps.push(createPowerUp());
+    }
+
     // Добавляем новых врагов, если их меньше 5
     while (enemies.length < 5) {
         enemies.push(createEnemy());
@@ -326,13 +382,29 @@ function draw() {
             if (enemyImageLoaded) {
                 ctx.drawImage(enemyImage, enemy.x, enemy.y, enemy.width, enemy.height);
             } else {
-                drawRect(enemy.x, enemy.y, enemy.width, enemy.height, 'red'); // Временно для отладки
+                drawRect(enemy.x, enemy.y, enemy.width, enemy.height, 'red');
             }
+        });
+
+        // Отрисовываем усиления
+        powerUps.forEach(powerUp => {
+            ctx.fillStyle = 'gold';
+            ctx.beginPath();
+            ctx.moveTo(powerUp.x + powerUp.width / 2, powerUp.y);
+            ctx.lineTo(powerUp.x + powerUp.width, powerUp.y + powerUp.height);
+            ctx.lineTo(powerUp.x, powerUp.y + powerUp.height);
+            ctx.closePath();
+            ctx.fill();
         });
 
         // Отрисовываем счет и жизни
         drawText(`Очки: ${score}`, 10, 30);
         drawText(`Жизни: ${lives}`, 10, 60);
+
+        // Отрисовка индикатора ускорения
+        if (isSpeedBoostActive) {
+            drawText('УСКОРЕНИЕ!', canvas.width / 2, 60, getFontSize(), 'yellow', 'center');
+        }
     } else {
         // Отрисовываем фон для экрана Game Over
         if (gameOverImageLoaded) {
@@ -349,9 +421,6 @@ function draw() {
         drawText('Нажмите T, чтобы отправить счет в Telegram', canvas.width / 2, canvas.height / 2 + 80, getFontSize(), 'white', 'center');
     }
 }
-
-
-
 
 // Функция для отправки счета в Telegram
 function sendScoreToTelegram() {
