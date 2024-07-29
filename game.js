@@ -17,7 +17,7 @@ let isMusicPlaying = false;
 // Отладка загрузки аудио
 introMusic.addEventListener('canplaythrough', () => console.log('Intro music loaded'));
 introMusic.addEventListener('error', () => console.error('Error loading Intro music'));
-gameOverMusic.addEventListener('canplaythrough', () => console.log('Game Over music loaded'));
+gameOverMusic.addEventListener('canplaythrough', () => console.log('Game Over music loaded and ready to play'));
 gameOverMusic.addEventListener('error', () => console.error('Error loading Game Over music'));
 shotSound.addEventListener('canplaythrough', () => console.log('Shot sound loaded'));
 shotSound.addEventListener('error', () => console.error('Error loading Shot sound'));
@@ -43,16 +43,23 @@ let gameOver = false;
 let gameStarted = false;
 let gameLoopRunning = false;
 
+// Функция для воспроизведения звука
+function playSoundIfPossible(sound) {
+    if (sound.readyState === 4) { // HAVE_ENOUGH_DATA
+        sound.play().catch(error => {
+            console.error("Ошибка воспроизведения звука:", error);
+        });
+    } else {
+        console.log("Звук еще не загружен полностью");
+    }
+}
+
 // Функция для воспроизведения вступительной музыки
 function playIntroMusic() {
     if (!isMusicPlaying) {
         console.log('Attempting to play Intro music');
-        introMusic.play().then(() => {
-            isMusicPlaying = true;
-            console.log('Intro music started playing');
-        }).catch(error => {
-            console.error("Ошибка воспроизведения вступительной музыки:", error);
-        });
+        playSoundIfPossible(introMusic);
+        isMusicPlaying = true;
     }
 }
 
@@ -67,24 +74,22 @@ function stopIntroMusic() {
 // Функция для воспроизведения музыки Game Over
 function playGameOverMusic() {
     console.log('Attempting to play Game Over music');
-    gameOverMusic.play().catch(error => {
-        console.error("Ошибка воспроизведения музыки Game Over:", error);
-    });
+    gameOverMusic.currentTime = 0;
+    playSoundIfPossible(gameOverMusic);
 }
 
 // Функция для воспроизведения звука выстрела
 function playShotSound() {
     console.log('Attempting to play Shot sound');
     shotSound.currentTime = 0;
-    shotSound.play().catch(error => {
-        console.error("Ошибка воспроизведения звука выстрела:", error);
-    });
+    playSoundIfPossible(shotSound);
 }
 
 // Функция для начала игры
 function startGame() {
     console.log('Starting game');
     gameStarted = true;
+    gameOver = false;
     startScreen.style.display = 'none';
     canvas.style.display = 'block';
     resizeCanvas();
@@ -194,8 +199,10 @@ function getFontSize() {
 function update() {
     if (gameOver) {
         if (isMusicPlaying) {
+            console.log('Stopping Intro music and playing Game Over music');
             stopIntroMusic();
             playGameOverMusic();
+            isMusicPlaying = false;
         }
         return;
     }
@@ -280,6 +287,8 @@ function draw() {
         // Отрисовываем экран Game Over
         ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        console.log('Drawing Game Over screen');
         
         drawText('GAME OVER', canvas.width / 2, canvas.height / 2 - 60, '48px', 'white', 'center');
         drawText(`Очки: ${score}`, canvas.width / 2, canvas.height / 2, '24px', 'white', 'center');
