@@ -2,6 +2,28 @@
 const tg = window.Telegram.WebApp;
 tg.expand();
 
+// Добавьте эти переменные в начало файла
+const backgroundLayers = [
+    { image: new Image(), speed: 0.2, y: 0 },
+    { image: new Image(), speed: 0.5, y: 0 },
+    { image: new Image(), speed: 0.8, y: 0 }
+];
+
+// Загрузка изображений для слоев
+backgroundLayers[0].image.src = 'images/background_stars.png';
+backgroundLayers[1].image.src = 'images/background_nebula.png';
+backgroundLayers[2].image.src = 'images/background_planets.png';
+
+// Функция для обновления позиций слоев фона
+function updateBackgroundLayers() {
+    backgroundLayers.forEach(layer => {
+        layer.y += layer.speed;
+        if (layer.y >= canvas.height) {
+            layer.y = 0;
+        }
+    });
+}
+
 // Загружаем изображение космического корабля
 const shipImage = new Image();
 shipImage.src = 'images/ship.png';
@@ -271,6 +293,8 @@ function update() {
         return;
     }
 
+    updateBackgroundLayers();
+
     // Обновляем положение пуль
     bullets.forEach((bullet, index) => {
         bullet.y -= bulletSpeed;
@@ -351,18 +375,25 @@ function update() {
     }
 }
 
-// Функция для отрисовки игры
 function draw() {
     // Очищаем canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Отрисовываем фон
-    if (backgroundImageLoaded) {
-        ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
-    } else {
-        ctx.fillStyle = 'black';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-    }
+    // Отрисовываем слои фона
+    backgroundLayers.forEach((layer, index) => {
+        if (index === 2) { // Предполагаем, что слой с планетами - третий
+            const scale = 0.8; // Уменьшаем до 80% от исходного размера
+            const newWidth = canvas.width * scale;
+            const newHeight = canvas.height * scale;
+            const offsetX = (canvas.width - newWidth) / 2;
+            const offsetY = (canvas.height - newHeight) / 2;
+            ctx.drawImage(layer.image, offsetX, layer.y + offsetY, newWidth, newHeight);
+            ctx.drawImage(layer.image, offsetX, layer.y - canvas.height + offsetY, newWidth, newHeight);
+        } else {
+            ctx.drawImage(layer.image, 0, layer.y, canvas.width, canvas.height);
+            ctx.drawImage(layer.image, 0, layer.y - canvas.height, canvas.width, canvas.height);
+        }
+    });
 
     if (!gameOver) {
         // Отрисовываем корабль игрока
