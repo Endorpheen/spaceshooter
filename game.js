@@ -8,6 +8,28 @@ const ctx = canvas.getContext('2d');
 const startScreen = document.getElementById('startScreen');
 const startButton = document.getElementById('startButton');
 
+// Добавляем элемент аудио
+const introMusic = document.getElementById('introMusic');
+let isMusicPlaying = false;
+
+// Функция для воспроизведения музыки
+function playMusic() {
+    if (!isMusicPlaying) {
+        introMusic.play().then(() => {
+            isMusicPlaying = true;
+        }).catch(error => {
+            console.error("Ошибка воспроизведения музыки:", error);
+        });
+    }
+}
+
+// Функция для остановки музыки
+function stopMusic() {
+    introMusic.pause();
+    introMusic.currentTime = 0;
+    isMusicPlaying = false;
+}
+
 // Глобальные переменные для масштабирования
 let scaleX, scaleY;
 
@@ -50,10 +72,14 @@ function startGame() {
         gameLoopRunning = true;
         gameLoop();
     }
+    stopMusic(); // Останавливаем музыку при начале игры
 }
 
 // Добавляем слушатель событий на кнопку "Начать игру"
-startButton.addEventListener('click', startGame);
+startButton.addEventListener('click', () => {
+    startGame();
+    playMusic(); // Начинаем воспроизведение музыки при нажатии кнопки
+});
 
 // Функция инициализации игры
 function initGame() {
@@ -352,3 +378,6 @@ window.addEventListener('load', () => {
     resizeCanvas();
     // Начальный экран уже отображается благодаря HTML структуре
 });
+
+// Добавляем обработчик для воспроизведения музыки при первом взаимодействии с страницей
+window.addEventListener('click', playMusic);
