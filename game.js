@@ -6,6 +6,16 @@ tg.expand();
 const shipImage = new Image();
 shipImage.src = 'images/ship.png'; // Укажите путь к вашему изображению космического корабля
 
+// Загружаем изображение фона
+const backgroundImage = new Image();
+backgroundImage.src = 'images/background.jpg'; // Укажите путь к вашему изображению космического фона
+
+// Флаг для отслеживания загрузки изображения фона
+let backgroundImageLoaded = false;
+backgroundImage.onload = function() {
+    backgroundImageLoaded = true;
+};
+
 // Флаг для отслеживания загрузки изображения космического корабля
 let shipImageLoaded = false;
 shipImage.onload = function() {
@@ -279,13 +289,20 @@ function draw() {
     // Очищаем canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+    // Отрисовываем фон, если изображение загружено
+    if (backgroundImageLoaded) {
+        ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
+    } else {
+        // Если изображение не загружено, можно отрисовать черный фон
+        ctx.fillStyle = 'black';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
     if (!gameOver) {
         // Отрисовываем корабль игрока
         if (shipImageLoaded) {
-            // Отрисовываем изображение космического корабля
             ctx.drawImage(shipImage, ship.x, ship.y, ship.width, ship.height);
         } else {
-            // Если изображение не загружено, показываем прямоугольник
             drawRect(ship.x, ship.y, ship.width, ship.height, ship.color);
         }
 
@@ -303,28 +320,23 @@ function draw() {
         drawText(`Очки: ${score}`, 10, 30);
         drawText(`Жизни: ${lives}`, 10, 60);
     } else {
-        // Отрисовываем экран Game Over
+        // Отрисовываем фон для экрана Game Over, если изображение загружено
         if (gameOverImageLoaded) {
-            // Отрисовываем изображение Game Over
             ctx.drawImage(gameOverImage, 0, 0, canvas.width, canvas.height);
-
-            // Отрисовываем текст поверх изображения
-            drawText('GAME OVER', canvas.width / 2, canvas.height / 2 - 60, '48px', 'white', 'center');
-            drawText(`Очки: ${score}`, canvas.width / 2, canvas.height / 2, '24px', 'white', 'center');
-            drawText('Нажмите пробел для перезапуска', canvas.width / 2, canvas.height / 2 + 40, getFontSize(), 'white', 'center');
-            drawText('Нажмите T, чтобы отправить счет в Telegram', canvas.width / 2, canvas.height / 2 + 80, getFontSize(), 'white', 'center');
         } else {
-            // Если изображение еще не загружено, просто показываем текст
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            // Если изображение не загружено, используем черный фон как запасной вариант
+            ctx.fillStyle = 'black';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            drawText('GAME OVER', canvas.width / 2, canvas.height / 2 - 60, '48px', 'white', 'center');
-            drawText(`Очки: ${score}`, canvas.width / 2, canvas.height / 2, '24px', 'white', 'center');
-            drawText('Нажмите пробел для перезапуска', canvas.width / 2, canvas.height / 2 + 40, getFontSize(), 'white', 'center');
-            drawText('Нажмите T, чтобы отправить счет в Telegram', canvas.width / 2, canvas.height / 2 + 80, getFontSize(), 'white', 'center');
         }
+        
+        // Отрисовываем текст поверх фона
+        drawText('GAME OVER', canvas.width / 2, canvas.height / 2 - 60, '48px', 'white', 'center');
+        drawText(`Очки: ${score}`, canvas.width / 2, canvas.height / 2, '24px', 'white', 'center');
+        drawText('Нажмите пробел для перезапуска', canvas.width / 2, canvas.height / 2 + 40, getFontSize(), 'white', 'center');
+        drawText('Нажмите T, чтобы отправить счет в Telegram', canvas.width / 2, canvas.height / 2 + 80, getFontSize(), 'white', 'center');
     }
 }
+
 
 
 // Функция для отправки счета в Telegram
