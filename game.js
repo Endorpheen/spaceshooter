@@ -74,6 +74,7 @@ const gameOverMusic = document.getElementById('gameOverMusic');
 const shotSound = document.getElementById('shotSound');
 let isMusicPlaying = false;
 
+
 // Глобальные переменные для масштабирования
 let scaleX, scaleY;
 
@@ -102,6 +103,31 @@ let powerUpDuration = 5000; // 5 секунд
 let isSpeedBoostActive = false;
 let speedBoostFactor = 2; // Удвоение скорости при активации
 let normalShipSpeed;
+
+// Массив для хранения активных частиц
+let particles = [];
+
+// Функция для создания частицы
+function createParticle(x, y) {
+    return {
+        x: x,
+        y: y,
+        size: Math.random() * 3 + 1,
+        speedX: Math.random() * 4 - 2,
+        speedY: Math.random() * 4 - 2,
+        lifetime: Math.random() * 30 + 30, // Время жизни частицы в кадрах
+    };
+}
+
+// Функция для создания взрыва
+function createExplosion(x, y) {
+    for (let i = 0; i < 30; i++) {
+        particles.push(createParticle(x, y));
+    }
+}
+
+// Загрузка звука взрыва
+const explosionSound = new Audio('sounds/explosion.mp3');
 
 // Функция для воспроизведения вступительной музыки
 function playIntroMusic() {
@@ -283,7 +309,6 @@ function getFontSize() {
     return Math.max(12, Math.floor(canvas.width / 30)) + 'px';
 }
 
-// Функция для обновления состояния игры
 function update() {
     if (gameOver) {
         if (isMusicPlaying) {
@@ -294,6 +319,14 @@ function update() {
     }
 
     updateBackgroundLayers();
+
+    // Обновление частиц
+    particles = particles.filter(particle => {
+        particle.x += particle.speedX;
+        particle.y += particle.speedY;
+        particle.lifetime--;
+        return particle.lifetime > 0;
+    });
 
     // Обновляем положение пуль
     bullets.forEach((bullet, index) => {
@@ -314,6 +347,9 @@ function update() {
             ship.y < enemy.y + enemy.height &&
             ship.y + ship.height > enemy.y
         ) {
+            createExplosion(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2);
+            explosionSound.currentTime = 0;
+            explosionSound.play().catch(error => console.error("Ошибка воспроизведения звука взрыва:", error));
             enemies.splice(enemyIndex, 1);
             lives--;
             if (lives <= 0) {
@@ -330,6 +366,9 @@ function update() {
                 bullet.y < enemy.y + enemy.height &&
                 bullet.y + bullet.height > enemy.y
             ) {
+                createExplosion(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2);
+                explosionSound.currentTime = 0;
+                explosionSound.play().catch(error => console.error("Ошибка воспроизведения звука взрыва:", error));
                 enemies.splice(enemyIndex, 1);
                 bullets.splice(bulletIndex, 1);
                 score++;
@@ -425,6 +464,14 @@ function draw() {
             ctx.lineTo(powerUp.x + powerUp.width, powerUp.y + powerUp.height);
             ctx.lineTo(powerUp.x, powerUp.y + powerUp.height);
             ctx.closePath();
+            ctx.fill();
+        });
+
+        // Отрисовка частиц
+        particles.forEach(particle => {
+            ctx.fillStyle = 'rgba(255, 200, 0, ' + (particle.lifetime / 60) + ')';
+            ctx.beginPath();
+            ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
             ctx.fill();
         });
 
