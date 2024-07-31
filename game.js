@@ -167,6 +167,19 @@ function playShotSound() {
     });
 }
 
+// Функция для сохранения высокого счета
+function saveHighScore(score) {
+    const highScore = getHighScore();
+    if (score > highScore) {
+        localStorage.setItem('highScore', score);
+    }
+}
+
+// Функция для получения высокого счета
+function getHighScore() {
+    return parseInt(localStorage.getItem('highScore')) || 0;
+}
+
 // Функция для начала игры
 function startGame() {
     console.log('Starting game');
@@ -341,22 +354,29 @@ function update() {
         enemy.y += enemySpeed;
 
         // Проверяем столкновение с кораблем игрока
-        if (
-            ship.x < enemy.x + enemy.width &&
-            ship.x + ship.width > enemy.x &&
-            ship.y < enemy.y + enemy.height &&
-            ship.y + ship.height > enemy.y
-        ) {
-            createExplosion(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2);
-            explosionSound.currentTime = 0;
-            explosionSound.play().catch(error => console.error("Ошибка воспроизведения звука взрыва:", error));
-            enemies.splice(enemyIndex, 1);
-            lives--;
-            if (lives <= 0) {
-                gameOver = true;
-                console.log('Game Over triggered');
-            }
+if (
+    ship.x < enemy.x + enemy.width &&
+    ship.x + ship.width > enemy.x &&
+    ship.y < enemy.y + enemy.height &&
+    ship.y + ship.height > enemy.y
+) {
+    createExplosion(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2);
+    explosionSound.currentTime = 0;
+    explosionSound.play().catch(error => console.error("Ошибка воспроизведения звука взрыва:", error));
+    enemies.splice(enemyIndex, 1);
+    lives--;
+    if (lives <= 0) {
+        gameOver = true;
+        saveHighScore(score); // Добавьте эту строку
+        console.log('Game Over triggered');
+        
+        // Дополнительные действия при окончании игры
+        if (isMusicPlaying) {
+            stopIntroMusic();
+            playGameOverMusic();
         }
+    }
+}
 
         // Проверяем столкновение с пулями
         bullets.forEach((bullet, bulletIndex) => {
@@ -475,9 +495,10 @@ function draw() {
             ctx.fill();
         });
 
-        // Отрисовываем счет и жизни
+        // Отрисовываем счет, жизни и рекорд
         drawText(`Очки: ${score}`, 10, 30);
         drawText(`Жизни: ${lives}`, 10, 60);
+        drawText(`Рекорд: ${getHighScore()}`, 10, 90);
 
         // Отрисовка индикатора ускорения
         if (isSpeedBoostActive) {
@@ -495,8 +516,9 @@ function draw() {
         // Отрисовываем текст поверх фона
         drawText('GAME OVER', canvas.width / 2, canvas.height / 2 - 60, '48px', 'white', 'center');
         drawText(`Очки: ${score}`, canvas.width / 2, canvas.height / 2, '24px', 'white', 'center');
-        drawText('Нажмите пробел для перезапуска', canvas.width / 2, canvas.height / 2 + 40, getFontSize(), 'white', 'center');
-        drawText('Нажмите T, чтобы отправить счет в Telegram', canvas.width / 2, canvas.height / 2 + 80, getFontSize(), 'white', 'center');
+        drawText(`Рекорд: ${getHighScore()}`, canvas.width / 2, canvas.height / 2 + 40, '24px', 'white', 'center');
+        drawText('Нажмите пробел для перезапуска', canvas.width / 2, canvas.height / 2 + 80, getFontSize(), 'white', 'center');
+        drawText('Нажмите T, чтобы отправить счет в Telegram', canvas.width / 2, canvas.height / 2 + 120, getFontSize(), 'white', 'center');
     }
 }
 
