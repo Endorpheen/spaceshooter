@@ -829,10 +829,10 @@ document.addEventListener('keydown', (event) => {
     }
 });
 
-// Заменим существующий обработчик касаний на следующий код:
+// Заменим существующий код обработки касаний на следующий:
 
 let lastTouchX = 0;
-let touchMoveInterval = null;
+let isTouching = false;
 
 canvas.addEventListener('touchstart', handleTouchStart, {passive: false});
 canvas.addEventListener('touchmove', handleTouchMove, {passive: false});
@@ -843,13 +843,8 @@ function handleTouchStart(event) {
     if (gameStarted && !gameOver) {
         const touch = event.touches[0];
         lastTouchX = touch.clientX;
+        isTouching = true;
         shoot();  // Стрельба при каждом касании
-        
-        // Начинаем непрерывное движение
-        touchMoveInterval = setInterval(() => {
-            const moveDistance = (lastTouchX < canvas.width / 2) ? -shipSpeed : shipSpeed;
-            ship.x = Math.max(0, Math.min(canvas.width - ship.width, ship.x + moveDistance));
-        }, 16);  // Примерно 60 кадров в секунду
     } else if (gameOver) {
         startGame();
     }
@@ -857,15 +852,25 @@ function handleTouchStart(event) {
 
 function handleTouchMove(event) {
     event.preventDefault();
-    if (gameStarted && !gameOver) {
+    if (gameStarted && !gameOver && isTouching) {
         const touch = event.touches[0];
-        lastTouchX = touch.clientX;
+        const currentTouchX = touch.clientX;
+        const moveDistance = currentTouchX - lastTouchX;
+        
+        // Увеличим скорость движения
+        const touchSpeedMultiplier = 1.5; // Можно настроить это значение
+        ship.x += moveDistance * touchSpeedMultiplier;
+        
+        // Ограничиваем положение корабля границами экрана
+        ship.x = Math.max(0, Math.min(canvas.width - ship.width, ship.x));
+        
+        lastTouchX = currentTouchX;
     }
 }
 
 function handleTouchEnd(event) {
     event.preventDefault();
-    clearInterval(touchMoveInterval);
+    isTouching = false;
 }
 
 // Обработчик изменения размера окна
