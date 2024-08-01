@@ -829,27 +829,44 @@ document.addEventListener('keydown', (event) => {
     }
 });
 
-// Добавляем обработчик касаний для мобильных устройств
-canvas.addEventListener('touchstart', (event) => {
+// Заменим существующий обработчик касаний на следующий код:
+
+let lastTouchX = 0;
+let touchMoveInterval = null;
+
+canvas.addEventListener('touchstart', handleTouchStart, {passive: false});
+canvas.addEventListener('touchmove', handleTouchMove, {passive: false});
+canvas.addEventListener('touchend', handleTouchEnd, {passive: false});
+
+function handleTouchStart(event) {
     event.preventDefault();
     if (gameStarted && !gameOver) {
         const touch = event.touches[0];
-        const touchX = touch.clientX;
+        lastTouchX = touch.clientX;
+        shoot();  // Стрельба при каждом касании
         
-        if (touchX < canvas.width / 2) {
-            // Движение влево
-            ship.x = Math.max(0, ship.x - shipSpeed);
-        } else {
-            // Движение вправо
-            ship.x = Math.min(canvas.width - ship.width, ship.x + shipSpeed);
-        }
-        
-        // Стрельба при каждом касании
-        shoot();
+        // Начинаем непрерывное движение
+        touchMoveInterval = setInterval(() => {
+            const moveDistance = (lastTouchX < canvas.width / 2) ? -shipSpeed : shipSpeed;
+            ship.x = Math.max(0, Math.min(canvas.width - ship.width, ship.x + moveDistance));
+        }, 16);  // Примерно 60 кадров в секунду
     } else if (gameOver) {
         startGame();
     }
-}, {passive: false});
+}
+
+function handleTouchMove(event) {
+    event.preventDefault();
+    if (gameStarted && !gameOver) {
+        const touch = event.touches[0];
+        lastTouchX = touch.clientX;
+    }
+}
+
+function handleTouchEnd(event) {
+    event.preventDefault();
+    clearInterval(touchMoveInterval);
+}
 
 // Обработчик изменения размера окна
 window.addEventListener('resize', resizeCanvas);
