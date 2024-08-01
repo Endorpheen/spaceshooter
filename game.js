@@ -831,47 +831,43 @@ document.addEventListener('keydown', (event) => {
 
 // Заменим существующий код обработки касаний на следующий:
 
-let lastTouchX = 0;
-let isTouching = false;
-
-canvas.addEventListener('touchstart', handleTouchStart, {passive: false});
-canvas.addEventListener('touchmove', handleTouchMove, {passive: false});
+canvas.addEventListener('touchstart', handleTouch, {passive: false});
+canvas.addEventListener('touchmove', handleTouch, {passive: false});
 canvas.addEventListener('touchend', handleTouchEnd, {passive: false});
 
-function handleTouchStart(event) {
+function handleTouch(event) {
     event.preventDefault();
     if (gameStarted && !gameOver) {
         const touch = event.touches[0];
-        lastTouchX = touch.clientX;
-        isTouching = true;
-        shoot();  // Стрельба при каждом касании
+        const touchX = touch.clientX;
+        const canvasRect = canvas.getBoundingClientRect();
+        const relativeX = touchX - canvasRect.left;
+        
+        // Увеличенная скорость движения
+        const moveSpeed = shipSpeed * 2;
+
+        if (relativeX < canvas.width / 3) {
+            // Движение влево
+            ship.x = Math.max(0, ship.x - moveSpeed);
+        } else if (relativeX > canvas.width * 2 / 3) {
+            // Движение вправо
+            ship.x = Math.min(canvas.width - ship.width, ship.x + moveSpeed);
+        }
+
+        // Стрельба при каждом касании
+        if (event.type === 'touchstart') {
+            shoot();
+        }
     } else if (gameOver) {
         startGame();
     }
 }
 
-function handleTouchMove(event) {
-    event.preventDefault();
-    if (gameStarted && !gameOver && isTouching) {
-        const touch = event.touches[0];
-        const currentTouchX = touch.clientX;
-        const moveDistance = currentTouchX - lastTouchX;
-        
-        // Увеличим скорость движения
-        const touchSpeedMultiplier = 1.5; // Можно настроить это значение
-        ship.x += moveDistance * touchSpeedMultiplier;
-        
-        // Ограничиваем положение корабля границами экрана
-        ship.x = Math.max(0, Math.min(canvas.width - ship.width, ship.x));
-        
-        lastTouchX = currentTouchX;
-    }
-}
-
 function handleTouchEnd(event) {
     event.preventDefault();
-    isTouching = false;
+    // Можно добавить дополнительную логику при необходимости
 }
+
 
 // Обработчик изменения размера окна
 window.addEventListener('resize', resizeCanvas);
