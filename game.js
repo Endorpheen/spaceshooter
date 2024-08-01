@@ -107,6 +107,20 @@ let normalShipSpeed;
 // Массив для хранения активных частиц
 let particles = [];
 
+// Обновим объект bossState
+const bossState = {
+    isBossFight: false,
+    bossDefeated: false,
+    boss: null,
+    bossImage: new Image(),
+    bossAppearanceScore: 10,
+    bossDefeatBonus: 2,
+    nextBossScore: 10  // Новое свойство для отслеживания счета следующего появления босса
+};
+
+bossState.bossImage.src = 'images/boss.png'; // Убедитесь, что у вас есть изображение босса
+
+
 // Функция для создания частицы
 function createParticle(x, y) {
     return {
@@ -213,11 +227,18 @@ function initGame() {
     gameOver = false;
     gameStarted = true;
 
+    // Сбрасываем состояние босса
+    bossState.isBossFight = false;
+    bossState.bossDefeated = false;
+    bossState.boss = null;
+    bossState.nextBossScore = bossState.bossAppearanceScore;
+
     // Создаем начальных врагов
     for (let i = 0; i < 5; i++) {
         enemies.push(createEnemy());
     }
 }
+
 
 // Функция изменения размеров canvas
 function resizeCanvas() {
@@ -322,6 +343,78 @@ function getFontSize() {
     return Math.max(12, Math.floor(canvas.width / 30)) + 'px';
 }
 
+// Функция для создания босса
+function createBoss() {
+    return {
+        x: canvas.width / 2 - 75,
+        y: -150,
+        width: 150,
+        height: 150,
+        health: 100,
+        maxHealth: 100
+    };
+}
+
+// Функция для обновления состояния босса
+function updateBoss() {
+    if (!bossState.boss || bossState.bossDefeated) {
+        console.log('updateBoss called with no active boss');
+        bossState.isBossFight = false;
+        return;
+    }
+
+    // Движение босса
+    bossState.boss.y += 1;
+    if (bossState.boss.y > 50) bossState.boss.y = 50;
+
+    // Проверка столкновений с пулями
+    for (let i = bullets.length - 1; i >= 0; i--) {
+        if (bullets[i] && bossState.boss &&
+            bullets[i].x < bossState.boss.x + bossState.boss.width &&
+            bullets[i].x + bullets[i].width > bossState.boss.x &&
+            bullets[i].y < bossState.boss.y + bossState.boss.height &&
+            bullets[i].y + bullets[i].height > bossState.boss.y
+        ) {
+            bossState.boss.health -= 10;
+            createExplosion(bullets[i].x, bullets[i].y);
+            bullets.splice(i, 1);
+        }
+    }
+
+    // Проверка поражения босса
+    if (bossState.boss && bossState.boss.health <= 0) {
+        console.log('Boss defeated, calling defeatedBoss');
+        defeatedBoss();
+        return;
+    }
+
+    // Стрельба босса
+    if (bossState.boss && Math.random() < 0.02) {
+        const bossShot = {
+            x: bossState.boss.x + bossState.boss.width / 2,
+            y: bossState.boss.y + bossState.boss.height,
+            width: 10,
+            height: 20,
+            color: 'red'
+        };
+        enemies.push(bossShot);
+    }
+}
+
+// Функция для обработки поражения босса
+// Обновим функцию defeatedBoss
+function defeatedBoss() {
+    if (bossState.boss) {
+        score += bossState.bossDefeatBonus;
+        createExplosion(bossState.boss.x + bossState.boss.width / 2, bossState.boss.y + bossState.boss.height / 2);
+    }
+    bossState.isBossFight = false;
+    bossState.bossDefeated = false;  // Изменено с true на false
+    bossState.boss = null;
+    bossState.nextBossScore = score + bossState.bossAppearanceScore;  // Устанавливаем счет для следующего босса
+    enemies = [];  // Очищаем массив врагов после победы над боссом
+}
+
 function update() {
     if (gameOver) {
         if (isMusicPlaying) {
@@ -342,65 +435,82 @@ function update() {
     });
 
     // Обновляем положение пуль
-    bullets.forEach((bullet, index) => {
-        bullet.y -= bulletSpeed;
-        if (bullet.y + bullet.height < 0) {
-            bullets.splice(index, 1);
-        }
-    });
-
-    // Обновляем положение врагов и проверяем столкновения
-    enemies.forEach((enemy, enemyIndex) => {
-        enemy.y += enemySpeed;
-
-        // Проверяем столкновение с кораблем игрока
-if (
-    ship.x < enemy.x + enemy.width &&
-    ship.x + ship.width > enemy.x &&
-    ship.y < enemy.y + enemy.height &&
-    ship.y + ship.height > enemy.y
-) {
-    createExplosion(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2);
-    explosionSound.currentTime = 0;
-    explosionSound.play().catch(error => console.error("Ошибка воспроизведения звука взрыва:", error));
-    enemies.splice(enemyIndex, 1);
-    lives--;
-    if (lives <= 0) {
-        gameOver = true;
-        saveHighScore(score); // Добавьте эту строку
-        console.log('Game Over triggered');
-        
-        // Дополнительные действия при окончании игры
-        if (isMusicPlaying) {
-            stopIntroMusic();
-            playGameOverMusic();
+    for (let i = bullets.length - 1; i >= 0; i--) {
+        bullets[i].y -= bulletSpeed;
+        if (bullets[i].y + bullets[i].height < 0) {
+            bullets.splice(i, 1);
         }
     }
-}
 
-        // Проверяем столкновение с пулями
-        bullets.forEach((bullet, bulletIndex) => {
+    // Проверяем, нужно ли начать бой с боссом
+    if (score >= bossState.nextBossScore && !bossState.isBossFight) {
+        bossState.isBossFight = true;
+        bossState.boss = createBoss();
+        enemies = []; // Очищаем обычных врагов при появлении босса
+    }
+
+    if (bossState.isBossFight && bossState.boss) {
+        updateBoss();
+    } else {
+        // Обновляем положение врагов и проверяем столкновения
+        for (let i = enemies.length - 1; i >= 0; i--) {
+            enemies[i].y += enemySpeed;
+
+            // Проверяем столкновение с кораблем игрока
             if (
-                bullet.x < enemy.x + enemy.width &&
-                bullet.x + bullet.width > enemy.x &&
-                bullet.y < enemy.y + enemy.height &&
-                bullet.y + bullet.height > enemy.y
+                ship.x < enemies[i].x + enemies[i].width &&
+                ship.x + ship.width > enemies[i].x &&
+                ship.y < enemies[i].y + enemies[i].height &&
+                ship.y + ship.height > enemies[i].y
             ) {
-                createExplosion(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2);
+                createExplosion(enemies[i].x + enemies[i].width / 2, enemies[i].y + enemies[i].height / 2);
                 explosionSound.currentTime = 0;
                 explosionSound.play().catch(error => console.error("Ошибка воспроизведения звука взрыва:", error));
-                enemies.splice(enemyIndex, 1);
-                bullets.splice(bulletIndex, 1);
-                score++;
+                enemies.splice(i, 1);
+                lives--;
+                if (lives <= 0) {
+                    gameOver = true;
+                    saveHighScore(score);
+                    console.log('Game Over triggered');
+                    
+                    if (isMusicPlaying) {
+                        stopIntroMusic();
+                        playGameOverMusic();
+                    }
+                }
+                continue;
             }
-        });
 
-        // Если враг вышел за пределы экрана, перемещаем его наверх
-        if (enemy.y > canvas.height) {
-            enemy.y = -enemyHeight;
-            enemy.x = Math.random() * (canvas.width - enemyWidth);
+            // Проверяем столкновение с пулями
+            for (let j = bullets.length - 1; j >= 0; j--) {
+                if (
+                    bullets[j].x < enemies[i].x + enemies[i].width &&
+                    bullets[j].x + bullets[j].width > enemies[i].x &&
+                    bullets[j].y < enemies[i].y + enemies[i].height &&
+                    bullets[j].y + bullets[j].height > enemies[i].y
+                ) {
+                    createExplosion(enemies[i].x + enemies[i].width / 2, enemies[i].y + enemies[i].height / 2);
+                    explosionSound.currentTime = 0;
+                    explosionSound.play().catch(error => console.error("Ошибка воспроизведения звука взрыва:", error));
+                    enemies.splice(i, 1);
+                    bullets.splice(j, 1);
+                    score++;
+                    break;
+                }
+            }
+
+            // Если враг вышел за пределы экрана, перемещаем его наверх
+            if (enemies[i] && enemies[i].y > canvas.height) {
+                enemies[i].y = -enemyHeight;
+                enemies[i].x = Math.random() * (canvas.width - enemyWidth);
+            }
         }
-    });
+
+        // Добавляем новых врагов, если их меньше 5
+        while (enemies.length < 5) {
+            enemies.push(createEnemy());
+        }
+    }
 
     // Обновление усилений
     powerUps.forEach((powerUp, index) => {
@@ -426,11 +536,6 @@ if (
     // Появление новых усилений
     if (Math.random() < powerUpChance) {
         powerUps.push(createPowerUp());
-    }
-
-    // Добавляем новых врагов, если их меньше 5
-    while (enemies.length < 5) {
-        enemies.push(createEnemy());
     }
 }
 
@@ -467,14 +572,35 @@ function draw() {
             drawRect(bullet.x, bullet.y, bullet.width, bullet.height, 'yellow');
         });
 
-        // Отрисовываем врагов
-        enemies.forEach(enemy => {
-            if (enemyImageLoaded) {
-                ctx.drawImage(enemyImage, enemy.x, enemy.y, enemy.width, enemy.height);
-            } else {
-                drawRect(enemy.x, enemy.y, enemy.width, enemy.height, 'red');
-            }
-        });
+        // Отрисовываем врагов или босса
+        if (bossState.isBossFight && bossState.boss) {
+            // Отрисовка босса
+            ctx.drawImage(bossState.bossImage, bossState.boss.x, bossState.boss.y, bossState.boss.width, bossState.boss.height);
+            
+            // Отрисовка полоски здоровья босса
+            const healthBarWidth = 200;
+            const healthBarHeight = 20;
+            const healthBarX = (canvas.width - healthBarWidth) / 2;
+            const healthBarY = 10;
+            
+            ctx.fillStyle = 'red';
+            ctx.fillRect(healthBarX, healthBarY, healthBarWidth, healthBarHeight);
+            
+            ctx.fillStyle = 'green';
+            const currentHealthWidth = (bossState.boss.health / bossState.boss.maxHealth) * healthBarWidth;
+            ctx.fillRect(healthBarX, healthBarY, currentHealthWidth, healthBarHeight);
+            
+            ctx.strokeStyle = 'white';
+            ctx.strokeRect(healthBarX, healthBarY, healthBarWidth, healthBarHeight);
+        } else {
+            enemies.forEach(enemy => {
+                if (enemyImageLoaded) {
+                    ctx.drawImage(enemyImage, enemy.x, enemy.y, enemy.width, enemy.height);
+                } else {
+                    drawRect(enemy.x, enemy.y, enemy.width, enemy.height, 'red');
+                }
+            });
+        }
 
         // Отрисовываем усиления
         powerUps.forEach(powerUp => {
