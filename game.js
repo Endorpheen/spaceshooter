@@ -115,7 +115,8 @@ const bossState = {
     bossImage: new Image(),
     bossAppearanceScore: 10,
     bossDefeatBonus: 2,
-    nextBossScore: 10  // Новое свойство для отслеживания счета следующего появления босса
+    nextBossScore: 10,
+    debugInfo: ''
 };
 
 bossState.bossImage.src = 'images/boss.png'; // Убедитесь, что у вас есть изображение босса
@@ -345,13 +346,18 @@ function getFontSize() {
 
 // Функция для создания босса
 function createBoss() {
+    console.log('Создание босса');
     return {
         x: canvas.width / 2 - 75,
-        y: -150,
+        y: 50,  // Изменено с -150 на 50, чтобы босс был виден сразу
         width: 150,
         height: 150,
         health: 100,
-        maxHealth: 100
+        maxHealth: 100,
+        speedX: 2,
+        speedY: 0.5,
+        movementTimer: 0,
+        movementInterval: 120
     };
 }
 
@@ -360,12 +366,29 @@ function updateBoss() {
     if (!bossState.boss || bossState.bossDefeated) {
         console.log('updateBoss called with no active boss');
         bossState.isBossFight = false;
+        bossState.debugInfo = 'Нет активного босса';
         return;
     }
 
     // Движение босса
-    bossState.boss.y += 1;
-    if (bossState.boss.y > 50) bossState.boss.y = 50;
+    bossState.boss.x += bossState.boss.speedX;
+    bossState.boss.y += bossState.boss.speedY;
+
+    // Ограничение движения
+    if (bossState.boss.x <= 0 || bossState.boss.x + bossState.boss.width >= canvas.width) {
+        bossState.boss.speedX *= -1;
+    }
+    if (bossState.boss.y <= 0 || bossState.boss.y >= canvas.height / 3) {
+        bossState.boss.speedY *= -1;
+    }
+
+    // Случайное изменение направления движения
+    bossState.boss.movementTimer++;
+    if (bossState.boss.movementTimer >= bossState.boss.movementInterval) {
+        bossState.boss.speedX = (Math.random() - 0.5) * 4;  // Случайная скорость от -2 до 2
+        bossState.boss.speedY = (Math.random() - 0.5) * 2;  // Случайная скорость от -1 до 1
+        bossState.boss.movementTimer = 0;
+    }
 
     // Проверка столкновений с пулями
     for (let i = bullets.length - 1; i >= 0; i--) {
@@ -399,6 +422,8 @@ function updateBoss() {
         };
         enemies.push(bossShot);
     }
+
+    bossState.debugInfo = `Босс: x=${Math.round(bossState.boss.x)}, y=${Math.round(bossState.boss.y)}`;
 }
 
 // Функция для обработки поражения босса
@@ -444,9 +469,10 @@ function update() {
 
     // Проверяем, нужно ли начать бой с боссом
     if (score >= bossState.nextBossScore && !bossState.isBossFight) {
+        console.log(`Инициализация босса. Счет: ${score}, nextBossScore: ${bossState.nextBossScore}`);
         bossState.isBossFight = true;
         bossState.boss = createBoss();
-        enemies = []; // Очищаем обычных врагов при появлении босса
+        bossState.debugInfo = 'Босс создан';
     }
 
     if (bossState.isBossFight && bossState.boss) {
@@ -572,10 +598,17 @@ function draw() {
             drawRect(bullet.x, bullet.y, bullet.width, bullet.height, 'yellow');
         });
 
-        // Отрисовываем врагов или босса
+        // Отрисовываем босса или врагов
         if (bossState.isBossFight && bossState.boss) {
+            console.log('Попытка отрисовки босса', bossState.boss);
             // Отрисовка босса
-            ctx.drawImage(bossState.bossImage, bossState.boss.x, bossState.boss.y, bossState.boss.width, bossState.boss.height);
+            if (bossState.bossImage.complete) {
+                ctx.drawImage(bossState.bossImage, bossState.boss.x, bossState.boss.y, bossState.boss.width, bossState.boss.height);
+                console.log('Босс отрисован');
+            } else {
+                drawRect(bossState.boss.x, bossState.boss.y, bossState.boss.width, bossState.boss.height, 'red');
+                console.log('Отрисован прямоугольник вместо босса');
+            }
             
             // Отрисовка полоски здоровья босса
             const healthBarWidth = 200;
@@ -615,7 +648,7 @@ function draw() {
 
         // Отрисовка частиц
         particles.forEach(particle => {
-            ctx.fillStyle = 'rgba(255, 200, 0, ' + (particle.lifetime / 60) + ')';
+            ctx.fillStyle = `rgba(255, 200, 0, ${particle.lifetime / 60})`;
             ctx.beginPath();
             ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
             ctx.fill();
@@ -630,8 +663,11 @@ function draw() {
         if (isSpeedBoostActive) {
             drawText('УСКОРЕНИЕ!', canvas.width / 2, 60, getFontSize(), 'yellow', 'center');
         }
+
+        // Отрисовка отладочной информации
+        drawText(bossState.debugInfo, 10, canvas.height - 20, '14px', 'white', 'left');
     } else {
-        // Отрисовываем фон для экрана Game Over
+        // Отрисовываем экран Game Over
         if (gameOverImageLoaded) {
             ctx.drawImage(gameOverImage, 0, 0, canvas.width, canvas.height);
         } else {
