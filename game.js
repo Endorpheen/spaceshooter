@@ -40,6 +40,19 @@ enemyImage.src = 'images/enemy.png';
 const gameOverImage = new Image();
 gameOverImage.src = 'images/gas-kvas-com-p-oboi-s-nadpisyu-konets-igri-36.jpg';
 
+const powerUpImage = new Image();
+powerUpImage.src = 'images/powerup-image.png'; // Замените на путь к вашему изображению
+
+// Добавьте обработчик ошибок загрузки изображения
+powerUpImage.onerror = function() {
+    console.error('Ошибка загрузки изображения усилителя');
+};
+
+// Опционально: добавьте обработчик успешной загрузки
+powerUpImage.onload = function() {
+    console.log('Изображение усилителя успешно загружено');
+};
+
 // Флаги для отслеживания загрузки изображений
 let backgroundImageLoaded = false;
 let shipImageLoaded = false;
@@ -104,6 +117,9 @@ let powerUpDuration = 5000; // 5 секунд
 let isSpeedBoostActive = false;
 let speedBoostFactor = 2; // Удвоение скорости при активации
 let normalShipSpeed;
+let isTextVisible = true;
+let textFlashTimer = 0;
+const textFlashInterval = 30; // Интервал мерцания в кадрах
 
 // Массив для хранения активных частиц
 let particles = [];
@@ -294,6 +310,7 @@ function createEnemy() {
 }
 
 // Функция для создания усиления
+// Обновленная функция createPowerUp
 function createPowerUp() {
     return {
         x: Math.random() * (canvas.width - 30),
@@ -319,6 +336,8 @@ function activateSpeedBoost() {
         normalShipSpeed = shipSpeed;
         shipSpeed *= speedBoostFactor;
         isSpeedBoostActive = true;
+        isTextVisible = true;
+        textFlashTimer = 0;
         setTimeout(() => {
             shipSpeed = normalShipSpeed;
             isSpeedBoostActive = false;
@@ -707,13 +726,13 @@ function draw() {
 
         // Отрисовываем усиления
         powerUps.forEach(powerUp => {
-            ctx.fillStyle = 'gold';
-            ctx.beginPath();
-            ctx.moveTo(powerUp.x + powerUp.width / 2, powerUp.y);
-            ctx.lineTo(powerUp.x + powerUp.width, powerUp.y + powerUp.height);
-            ctx.lineTo(powerUp.x, powerUp.y + powerUp.height);
-            ctx.closePath();
-            ctx.fill();
+            if (powerUpImage.complete) {
+                ctx.drawImage(powerUpImage, powerUp.x, powerUp.y, powerUp.width, powerUp.height);
+            } else {
+                // Резервный вариант, если изображение не загрузилось
+                ctx.fillStyle = 'gold';
+                ctx.fillRect(powerUp.x, powerUp.y, powerUp.width, powerUp.height);
+            }
         });
 
         // Отрисовка частиц
@@ -729,9 +748,21 @@ function draw() {
         drawText(`Жизни: ${lives}`, 10, 60);
         drawText(`Рекорд: ${getHighScore()}`, 10, 90);
 
+    
         // Отрисовка индикатора ускорения
         if (isSpeedBoostActive) {
-            drawText('УСКОРЕНИЕ!', canvas.width / 2, 60, getFontSize(), 'yellow', 'center');
+            textFlashTimer++;
+            if (textFlashTimer >= textFlashInterval) {
+                isTextVisible = !isTextVisible;
+                textFlashTimer = 0;
+            }
+            
+            if (isTextVisible) {
+                drawText('Пилоту Хорошо', canvas.width / 2, 60, getFontSize(), 'yellow', 'center');
+            }
+        } else {
+            isTextVisible = true;
+            textFlashTimer = 0;
         }
 
         // Отрисовка отладочной информации
