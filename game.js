@@ -88,6 +88,7 @@ let ship;
 // Массивы для пуль и врагов
 let bullets = [];
 let enemies = [];
+let bossShots = [];
 
 // Игровые переменные
 let score = 0;
@@ -390,7 +391,47 @@ function updateBoss() {
         bossState.boss.movementTimer = 0;
     }
 
-    // Проверка столкновений с пулями
+    // Стрельба босса
+    if (Math.random() < 0.02) {  // 2% шанс выстрела на каждом кадре
+        const bossShot = {
+            x: bossState.boss.x + bossState.boss.width / 2,
+            y: bossState.boss.y + bossState.boss.height,
+            width: 10,
+            height: 20,
+            speed: 5,
+            color: 'red'
+        };
+        bossShots.push(bossShot);
+    }
+
+    // Обновление позиций выстрелов босса
+    for (let i = bossShots.length - 1; i >= 0; i--) {
+        bossShots[i].y += bossShots[i].speed;
+        
+        // Удаление выстрелов, вышедших за пределы экрана
+        if (bossShots[i].y > canvas.height) {
+            bossShots.splice(i, 1);
+        } else {
+            // Проверка столкновения с игроком
+            if (
+                ship.x < bossShots[i].x + bossShots[i].width &&
+                ship.x + ship.width > bossShots[i].x &&
+                ship.y < bossShots[i].y + bossShots[i].height &&
+                ship.y + ship.height > bossShots[i].y
+            ) {
+                createExplosion(ship.x + ship.width / 2, ship.y + ship.height / 2);
+                bossShots.splice(i, 1);
+                lives--;
+                if (lives <= 0) {
+                    gameOver = true;
+                    saveHighScore(score);
+                }
+                break;
+            }
+        }
+    }
+
+    // Проверка столкновений с пулями игрока
     for (let i = bullets.length - 1; i >= 0; i--) {
         if (bullets[i] && bossState.boss &&
             bullets[i].x < bossState.boss.x + bossState.boss.width &&
@@ -411,19 +452,7 @@ function updateBoss() {
         return;
     }
 
-    // Стрельба босса
-    if (bossState.boss && Math.random() < 0.02) {
-        const bossShot = {
-            x: bossState.boss.x + bossState.boss.width / 2,
-            y: bossState.boss.y + bossState.boss.height,
-            width: 10,
-            height: 20,
-            color: 'red'
-        };
-        enemies.push(bossShot);
-    }
-
-    bossState.debugInfo = `Босс: x=${Math.round(bossState.boss.x)}, y=${Math.round(bossState.boss.y)}`;
+    bossState.debugInfo = `Босс: x=${Math.round(bossState.boss.x)}, y=${Math.round(bossState.boss.y)}, Выстрелов: ${bossShots.length}`;
 }
 
 // Функция для обработки поражения босса
@@ -438,7 +467,11 @@ function defeatedBoss() {
     bossState.boss = null;
     bossState.nextBossScore = score + bossState.bossAppearanceScore;  // Устанавливаем счет для следующего босса
     enemies = [];  // Очищаем массив врагов после победы над боссом
-}
+
+    // Очистка пуль босса
+    bossShots = [];
+    console.log('Босс побежден, пули босса очищены');
+}   
 
 function update() {
     if (gameOver) {
@@ -459,7 +492,7 @@ function update() {
         return particle.lifetime > 0;
     });
 
-    // Обновляем положение пуль
+    // Обновляем положение пуль игрока
     for (let i = bullets.length - 1; i >= 0; i--) {
         bullets[i].y -= bulletSpeed;
         if (bullets[i].y + bullets[i].height < 0) {
@@ -478,6 +511,12 @@ function update() {
     if (bossState.isBossFight && bossState.boss) {
         updateBoss();
     } else {
+        // Если бой с боссом не активен, удаляем все пули босса
+        if (bossShots.length > 0) {
+            bossShots = [];
+            console.log('Бой с боссом неактивен, пули босса очищены');
+        }
+        
         // Обновляем положение врагов и проверяем столкновения
         for (let i = enemies.length - 1; i >= 0; i--) {
             enemies[i].y += enemySpeed;
@@ -507,7 +546,7 @@ function update() {
                 continue;
             }
 
-            // Проверяем столкновение с пулями
+            // Проверяем столкновение с пулями игрока
             for (let j = bullets.length - 1; j >= 0; j--) {
                 if (
                     bullets[j].x < enemies[i].x + enemies[i].width &&
@@ -532,9 +571,35 @@ function update() {
             }
         }
 
-        // Добавляем новых врагов, если их меньше 5
+        // Добавляем новых врагов, если их меньше 5 и нет боя с боссом
         while (enemies.length < 5) {
             enemies.push(createEnemy());
+        }
+    }
+
+    // Обновление пуль босса
+    for (let i = bossShots.length - 1; i >= 0; i--) {
+        bossShots[i].y += bossShots[i].speed;
+        
+        // Удаление выстрелов, вышедших за пределы экрана
+        if (bossShots[i].y > canvas.height) {
+            bossShots.splice(i, 1);
+        } else {
+            // Проверка столкновения с игроком
+            if (
+                ship.x < bossShots[i].x + bossShots[i].width &&
+                ship.x + ship.width > bossShots[i].x &&
+                ship.y < bossShots[i].y + bossShots[i].height &&
+                ship.y + ship.height > bossShots[i].y
+            ) {
+                createExplosion(ship.x + ship.width / 2, ship.y + ship.height / 2);
+                bossShots.splice(i, 1);
+                lives--;
+                if (lives <= 0) {
+                    gameOver = true;
+                    saveHighScore(score);
+                }
+            }
         }
     }
 
@@ -593,9 +658,14 @@ function draw() {
             drawRect(ship.x, ship.y, ship.width, ship.height, ship.color);
         }
 
-        // Отрисовываем пули
+        // Отрисовываем пули игрока
         bullets.forEach(bullet => {
             drawRect(bullet.x, bullet.y, bullet.width, bullet.height, 'yellow');
+        });
+
+        // Отрисовываем выстрелы босса
+        bossShots.forEach(shot => {
+            drawRect(shot.x, shot.y, shot.width, shot.height, shot.color);
         });
 
         // Отрисовываем босса или врагов
