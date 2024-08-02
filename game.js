@@ -844,7 +844,7 @@ function handleTouch(event) {
         const relativeX = touchX - canvasRect.left;
         
         // Увеличенная скорость движения
-        const moveSpeed = shipSpeed * 2;
+        const moveSpeed = shipSpeed * 2.5; // Увеличено с 2 до 2.5
 
         if (relativeX < canvas.width / 3) {
             // Движение влево
