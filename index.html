@@ -31,7 +31,7 @@
             top: 0;
             left: 0;
             width: 100%;
-            height: 100%;
+            height: 90%;
             opacity: 0;
             transition: opacity 0.5s ease-in-out;
             display: flex;
@@ -51,7 +51,7 @@
         }
         .slide-content img {
             width: 100%;
-            max-height: 70vh;
+            max-height: 60vh;
             object-fit: contain;
             border-radius: 10px;
         }
@@ -63,6 +63,8 @@
             padding: 10px;
             border-radius: 5px;
             max-width: 80%;
+            position: absolute; /* Позиционируем абсолютно */
+            bottom: 15%; /* Поднимаем описание выше */
         }
         #gameStartButton {
             position: absolute;
