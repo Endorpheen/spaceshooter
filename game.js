@@ -79,7 +79,7 @@ gameOverImage.onload = function() {
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const startScreen = document.getElementById('startScreen');
-const startButton = document.getElementById('startButton');
+const startButton = document.getElementById('gameStartButton');
 
 // Аудио элементы
 const introMusic = document.getElementById('introMusic');
@@ -829,45 +829,27 @@ document.addEventListener('keydown', (event) => {
     }
 });
 
-// Заменим существующий код обработки касаний на следующий:
-
-canvas.addEventListener('touchstart', handleTouch, {passive: false});
-canvas.addEventListener('touchmove', handleTouch, {passive: false});
-canvas.addEventListener('touchend', handleTouchEnd, {passive: false});
-
-function handleTouch(event) {
+// Добавляем обработчик касаний для мобильных устройств
+canvas.addEventListener('touchstart', (event) => {
     event.preventDefault();
     if (gameStarted && !gameOver) {
         const touch = event.touches[0];
         const touchX = touch.clientX;
-        const canvasRect = canvas.getBoundingClientRect();
-        const relativeX = touchX - canvasRect.left;
         
-        // Увеличенная скорость движения
-        const moveSpeed = shipSpeed * 2;
-
-        if (relativeX < canvas.width / 3) {
+        if (touchX < canvas.width / 2) {
             // Движение влево
-            ship.x = Math.max(0, ship.x - moveSpeed);
-        } else if (relativeX > canvas.width * 2 / 3) {
+            ship.x = Math.max(0, ship.x - shipSpeed);
+        } else {
             // Движение вправо
-            ship.x = Math.min(canvas.width - ship.width, ship.x + moveSpeed);
+            ship.x = Math.min(canvas.width - ship.width, ship.x + shipSpeed);
         }
-
+        
         // Стрельба при каждом касании
-        if (event.type === 'touchstart') {
-            shoot();
-        }
+        shoot();
     } else if (gameOver) {
         startGame();
     }
-}
-
-function handleTouchEnd(event) {
-    event.preventDefault();
-    // Можно добавить дополнительную логику при необходимости
-}
-
+}, {passive: false});
 
 // Обработчик изменения размера окна
 window.addEventListener('resize', resizeCanvas);

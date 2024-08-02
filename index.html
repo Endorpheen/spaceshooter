@@ -3,80 +3,163 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Космический Страж: Последний Рубеж</title>
+    <title>Earth Alliance</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body {
+        body, html {
             margin: 0;
             padding: 0;
+            height: 100%;
+            font-family: Arial, sans-serif;
             background-color: #000;
             color: #fff;
-            font-family: Arial, sans-serif;
             overflow: hidden;
         }
-        #gameCanvas {
-            display: block;
-            width: 100%;
-            height: 100vh;
-            touch-action: none;
-        }
         #startScreen {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background: url('images/space-background.jpg') no-repeat center center fixed;
+            background-size: cover;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .slide {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            background: url('images/space-background.jpg') no-repeat center center fixed;
-            background-size: cover;
         }
-        #storyText {
-            width: 80%;
-            max-width: 600px;
-            text-align: center;
+        .slide.active {
+            opacity: 1;
+        }
+        .slide-content {
+            width: 90%;
+            max-width: 800px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .slide-content img {
+            width: 100%;
+            max-height: 70vh;
+            object-fit: contain;
+            border-radius: 10px;
+        }
+        .slide-caption {
+            margin-top: 20px;
             font-size: 18px;
-            line-height: 1.6;
-            margin-bottom: 20px;
-            color: red; /* Изменено с белого на красный */
-        }   
-        #startButton {
-            padding: 10px 20px;
+            text-align: center;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 5px;
+            max-width: 80%;
+        }
+        #gameStartButton {
+            position: absolute;
+            bottom: 30px;
+            padding: 15px 30px;
             font-size: 20px;
             background-color: #4CAF50;
             color: white;
             border: none;
+            border-radius: 5px;
             cursor: pointer;
             transition: background-color 0.3s;
+            z-index: 10;
         }
-        #startButton:hover {
+        #gameStartButton:hover {
             background-color: #45a049;
+        }
+        #gameCanvas {
+            display: none;
+            width: 100%;
+            height: 100%;
+        }
+        .game-title {
+            font-size: 36px;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
         }
     </style>
 </head>
 <body>
     <div id="startScreen">
-        <div id="storyText">
-            <h1>Космический Страж: Последний Рубеж</h1>
-            <p>Год 2184. Человечество достигло звезд, но столкнулось с угрозой от древней инопланетной расы Зоргонов. Вы - лучший пилот Земного Альянса, управляющий уникальным истребителем "Феникс". Ваша миссия - защитить человечество и остановить вторжение Зоргонов.</p>
+        <div class="game-title">EARTH ALLIANCE</div>
+        <div class="slide active">
+            <div class="slide-content">
+                <img src="images/slide1.png" alt="Человечество в космосе">
+                <div class="slide-caption">2184 год. Человечество покорило звезды.</div>
+            </div>
         </div>
-        <button id="startButton">Начать игру</button>
+        <div class="slide">
+            <div class="slide-content">
+                <img src="images/slide2.png" alt="Угроза Зоргонов">
+                <div class="slide-caption">Древняя раса Зоргонов угрожает уничтожить Землю.</div>
+            </div>
+        </div>
+        <div class="slide">
+            <div class="slide-content">
+                <img src="images/slide3.png" alt="Элитный пилот">
+                <div class="slide-caption">Ты - элитный пилот. Твоя миссия - спасти человечество.</div>
+            </div>
+        </div>
+        <button id="gameStartButton">Начать игру</button>
     </div>
     <canvas id="gameCanvas"></canvas>
     <audio id="introMusic" loop>
         <source src="sounds/intromelody.mp3" type="audio/mpeg">
-        Ваш браузер не поддерживает аудио элемент.
     </audio>
     <audio id="gameOverMusic">
         <source src="sounds/gameovermelody.mp3" type="audio/mpeg">
-        Ваш браузер не поддерживает аудио элемент.
     </audio>
     <audio id="shotSound">
         <source src="sounds/shotsound.mp3" type="audio/mpeg">
-        Ваш браузер не поддерживает аудио элемент.
     </audio>
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const gameStartButton = document.getElementById('gameStartButton');
+
+        function showSlide(index) {
+            slides[currentSlide].classList.remove('active');
+            slides[index].classList.add('active');
+            currentSlide = index;
+        }
+
+        function nextSlide() {
+            if (currentSlide < slides.length - 1) {
+                showSlide(currentSlide + 1);
+            } else {
+                showSlide(0);
+            }
+        }
+
+        setInterval(nextSlide, 5000);
+
+        function initializeGame() {
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('gameCanvas').style.display = 'block';
+            if (typeof startGame === 'function') {
+                startGame();
+            } else {
+                console.error('Функция startGame не найдена');
+            }
+        }
+
+        gameStartButton.addEventListener('click', initializeGame);
+    </script>
     <script src="game.js"></script>
 </body>
 </html>
