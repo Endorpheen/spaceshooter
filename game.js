@@ -156,7 +156,7 @@ const bossState = {
 bossState.bossImage.src = 'images/boss.png'; // Убедитесь, что у вас есть изображение босса
 
 
-// Функция для управления музыкой
+// Обновленная функция для управления музыкой
 function toggleMusic() {
     isMusicEnabled = !isMusicEnabled;
     document.getElementById('musicToggle').checked = isMusicEnabled;
