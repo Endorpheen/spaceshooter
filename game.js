@@ -156,7 +156,7 @@ const bossState = {
 bossState.bossImage.src = 'images/boss.png'; // Убедитесь, что у вас есть изображение босса
 
 
-// Обновленная функция для управления музыкой
+// Функция для управления музыкой!
 function toggleMusic() {
     isMusicEnabled = !isMusicEnabled;
     document.getElementById('musicToggle').checked = isMusicEnabled;
@@ -932,27 +932,44 @@ document.addEventListener('keydown', (event) => {
     }
 });
 
-// Добавляем обработчик касаний для мобильных устройств
-canvas.addEventListener('touchstart', (event) => {
+// Заменим существующий код обработки касаний на следующий:
+
+canvas.addEventListener('touchstart', handleTouch, {passive: false});
+canvas.addEventListener('touchmove', handleTouch, {passive: false});
+canvas.addEventListener('touchend', handleTouchEnd, {passive: false});
+
+function handleTouch(event) {
     event.preventDefault();
     if (gameStarted && !gameOver) {
         const touch = event.touches[0];
         const touchX = touch.clientX;
+        const canvasRect = canvas.getBoundingClientRect();
+        const relativeX = touchX - canvasRect.left;
         
-        if (touchX < canvas.width / 2) {
+        // Увеличенная скорость движения
+        const moveSpeed = shipSpeed * 2;
+
+        if (relativeX < canvas.width / 3) {
             // Движение влево
-            ship.x = Math.max(0, ship.x - shipSpeed);
-        } else {
+            ship.x = Math.max(0, ship.x - moveSpeed);
+        } else if (relativeX > canvas.width * 2 / 3) {
             // Движение вправо
-            ship.x = Math.min(canvas.width - ship.width, ship.x + shipSpeed);
+            ship.x = Math.min(canvas.width - ship.width, ship.x + moveSpeed);
         }
-        
+
         // Стрельба при каждом касании
-        shoot();
+        if (event.type === 'touchstart') {
+            shoot();
+        }
     } else if (gameOver) {
         startGame();
     }
-}, {passive: false});
+}
+
+function handleTouchEnd(event) {
+    event.preventDefault();
+    // Можно добавить дополнительную логику при необходимости
+}
 
 // Обновляем обработчики открытия и закрытия меню настроек
 document.getElementById('openSettings').addEventListener('click', () => {
