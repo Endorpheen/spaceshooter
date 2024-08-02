@@ -124,6 +124,8 @@ let lives = 3;
 let gameOver = false;
 let gameStarted = false;
 let gameLoopRunning = false;
+// Переменная для отслеживания состояния паузы
+let isPaused = false;
 
 // Переменные для усилений
 let powerUps = [];
@@ -256,6 +258,17 @@ function getHighScore() {
     return parseInt(localStorage.getItem('highScore')) || 0;
 }
 
+// Обновленная функция для смены корабля
+function changeShip(newShip) {
+    selectedShip = newShip;
+    shipImage.src = shipImages[selectedShip].src;
+    // Обновляем текущий корабль игрока
+    if (ship) {
+        ship.width = shipWidth;
+        ship.height = shipHeight;
+    }
+}
+
 // Функция для начала игры
 function startGame() {
     console.log('Starting game');
@@ -331,6 +344,17 @@ function initGame() {
     console.log('Game initialized with ship:', selectedShip, 'Music enabled:', isMusicEnabled);
 }
 
+// Функция для постановки игры на паузу
+function pauseGame() {
+    isPaused = true;
+    // Здесь можно добавить визуальное отображение паузы
+}
+
+// Функция для возобновления игры
+function resumeGame() {
+    isPaused = false;
+    // Здесь можно убрать визуальное отображение паузы
+}
 
 // Функция изменения размеров canvas
 function resizeCanvas() {
@@ -567,13 +591,7 @@ function defeatedBoss() {
 }   
 
 function update() {
-    if (gameOver) {
-        if (isMusicPlaying) {
-            stopIntroMusic();
-            playGameOverMusic();
-        }
-        return;
-    }
+    if (isPaused) return;
 
     updateBackgroundLayers();
 
@@ -632,7 +650,7 @@ function update() {
                     console.log('Game Over triggered');
                     
                     if (isMusicPlaying) {
-                        stopIntroMusic();
+                        stopAllMusic();
                         playGameOverMusic();
                     }
                 }
@@ -721,6 +739,15 @@ function update() {
     if (Math.random() < powerUpChance) {
         powerUps.push(createPowerUp());
     }
+
+    // Обновление таймера мерцания текста
+    if (isSpeedBoostActive) {
+        textFlashTimer++;
+        if (textFlashTimer >= textFlashInterval) {
+            isTextVisible = !isTextVisible;
+            textFlashTimer = 0;
+        }
+    }
 }
 
 function draw() {
@@ -763,14 +790,11 @@ function draw() {
 
         // Отрисовываем босса или врагов
         if (bossState.isBossFight && bossState.boss) {
-            console.log('Попытка отрисовки босса', bossState.boss);
             // Отрисовка босса
             if (bossState.bossImage.complete) {
                 ctx.drawImage(bossState.bossImage, bossState.boss.x, bossState.boss.y, bossState.boss.width, bossState.boss.height);
-                console.log('Босс отрисован');
             } else {
                 drawRect(bossState.boss.x, bossState.boss.y, bossState.boss.width, bossState.boss.height, 'red');
-                console.log('Отрисован прямоугольник вместо босса');
             }
             
             // Отрисовка полоски здоровья босса
@@ -790,7 +814,7 @@ function draw() {
             ctx.strokeRect(healthBarX, healthBarY, healthBarWidth, healthBarHeight);
         } else {
             enemies.forEach(enemy => {
-                if (enemyImageLoaded) {
+                if (enemyImage.complete) {
                     ctx.drawImage(enemyImage, enemy.x, enemy.y, enemy.width, enemy.height);
                 } else {
                     drawRect(enemy.x, enemy.y, enemy.width, enemy.height, 'red');
@@ -803,7 +827,6 @@ function draw() {
             if (powerUpImage.complete) {
                 ctx.drawImage(powerUpImage, powerUp.x, powerUp.y, powerUp.width, powerUp.height);
             } else {
-                // Резервный вариант, если изображение не загрузилось
                 ctx.fillStyle = 'gold';
                 ctx.fillRect(powerUp.x, powerUp.y, powerUp.width, powerUp.height);
             }
@@ -833,16 +856,13 @@ function draw() {
             if (isTextVisible) {
                 drawText('Пилоту Хорошо', canvas.width / 2, 60, getFontSize(), 'yellow', 'center');
             }
-        } else {
-            isTextVisible = true;
-            textFlashTimer = 0;
         }
 
         // Отрисовка отладочной информации
         drawText(bossState.debugInfo, 10, canvas.height - 20, '14px', 'white', 'left');
     } else {
         // Отрисовываем экран Game Over
-        if (gameOverImageLoaded) {
+        if (gameOverImage.complete) {
             ctx.drawImage(gameOverImage, 0, 0, canvas.width, canvas.height);
         } else {
             ctx.fillStyle = 'black';
@@ -856,6 +876,16 @@ function draw() {
         drawText('Нажмите пробел для перезапуска', canvas.width / 2, canvas.height / 2 + 80, getFontSize(), 'white', 'center');
         drawText('Нажмите T, чтобы отправить счет в Telegram', canvas.width / 2, canvas.height / 2 + 120, getFontSize(), 'white', 'center');
     }
+
+    // Отрисовка экрана паузы
+    if (isPaused) {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = 'white';
+        ctx.font = '30px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('ПАУЗА', canvas.width / 2, canvas.height / 2);
+    }
 }
 
 // Функция для отправки счета в Telegram
@@ -866,12 +896,12 @@ function sendScoreToTelegram() {
 // Игровой цикл
 function gameLoop() {
     if (gameStarted && !gameOver) {
-        update();
+        if (!isPaused) {
+            update();
+        }
         draw();
-        requestAnimationFrame(gameLoop);
-    } else {
-        gameLoopRunning = false;
     }
+    requestAnimationFrame(gameLoop);
 }
 
 // Функция выстрела
@@ -924,17 +954,20 @@ canvas.addEventListener('touchstart', (event) => {
     }
 }, {passive: false});
 
-// Обновляем обработчики событий для меню настроек
+// Обновляем обработчики открытия и закрытия меню настроек
 document.getElementById('openSettings').addEventListener('click', () => {
     document.getElementById('settingsMenu').style.display = 'block';
+    pauseGame();
 });
 
 document.getElementById('closeSettings').addEventListener('click', () => {
     document.getElementById('settingsMenu').style.display = 'none';
+    resumeGame();
 });
 
+// Обновленный обработчик события для выбора корабля
 document.getElementById('shipSelect').addEventListener('change', (e) => {
-    selectedShip = e.target.value;
+    changeShip(e.target.value);
 });
 
 // Обновленный обработчик события для переключателя музыки
