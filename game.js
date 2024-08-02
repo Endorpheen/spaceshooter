@@ -2,6 +2,22 @@
 const tg = window.Telegram.WebApp;
 tg.expand();
 
+// Глобальные переменные для настроек
+let selectedShip = 'ship1';
+
+// Глобальная переменная для состояния музыки
+let isMusicEnabled = true;
+
+// Загрузка изображений кораблей
+const shipImages = {
+    ship1: new Image(),
+    ship2: new Image(),
+    ship3: new Image()
+};
+shipImages.ship1.src = 'images/ship1.png';
+shipImages.ship2.src = 'images/ship2.png';
+shipImages.ship3.src = 'images/ship3.png';
+
 // Добавьте эти переменные в начало файла
 const backgroundLayers = [
     { image: new Image(), speed: 0.2, y: 0 },
@@ -26,7 +42,7 @@ function updateBackgroundLayers() {
 
 // Загружаем изображение космического корабля
 const shipImage = new Image();
-shipImage.src = 'images/ship.png';
+shipImage.src = 'images/ship1.png';
 
 // Загружаем изображение фона
 const backgroundImage = new Image();
@@ -87,7 +103,6 @@ const gameOverMusic = document.getElementById('gameOverMusic');
 const shotSound = document.getElementById('shotSound');
 let isMusicPlaying = false;
 
-
 // Глобальные переменные для масштабирования
 let scaleX, scaleY;
 
@@ -139,6 +154,33 @@ const bossState = {
 bossState.bossImage.src = 'images/boss.png'; // Убедитесь, что у вас есть изображение босса
 
 
+// Обновленная функция для управления музыкой
+function toggleMusic() {
+    isMusicEnabled = !isMusicEnabled;
+    document.getElementById('musicToggle').checked = isMusicEnabled;
+    
+    if (isMusicEnabled) {
+        if (gameOver) {
+            playGameOverMusic();
+        } else {
+            playIntroMusic();
+        }
+    } else {
+        stopAllMusic();
+    }
+    console.log('Music enabled:', isMusicEnabled);
+}
+
+// Функция для остановки всей музыки
+function stopAllMusic() {
+    introMusic.pause();
+    introMusic.currentTime = 0;
+    gameOverMusic.pause();
+    gameOverMusic.currentTime = 0;
+    isMusicPlaying = false;
+    console.log('All music stopped');
+}
+
 // Функция для создания частицы
 function createParticle(x, y) {
     return {
@@ -161,9 +203,9 @@ function createExplosion(x, y) {
 // Загрузка звука взрыва
 const explosionSound = new Audio('sounds/explosion.mp3');
 
-// Функция для воспроизведения вступительной музыки
+// Обновленная функция playIntroMusic
 function playIntroMusic() {
-    if (!isMusicPlaying) {
+    if (isMusicEnabled && !isMusicPlaying) {
         console.log('Attempting to play Intro music');
         introMusic.play().then(() => {
             isMusicPlaying = true;
@@ -184,10 +226,12 @@ function stopIntroMusic() {
 
 // Функция для воспроизведения музыки Game Over
 function playGameOverMusic() {
-    console.log('Attempting to play Game Over music');
-    gameOverMusic.play().catch(error => {
-        console.error("Ошибка воспроизведения музыки Game Over:", error);
-    });
+    if (isMusicEnabled) {
+        console.log('Attempting to play Game Over music');
+        gameOverMusic.play().catch(error => {
+            console.error("Ошибка воспроизведения музыки Game Over:", error);
+        });
+    }
 }
 
 // Функция для воспроизведения звука выстрела
@@ -255,6 +299,36 @@ function initGame() {
     for (let i = 0; i < 5; i++) {
         enemies.push(createEnemy());
     }
+
+    // Устанавливаем выбранный корабль
+    shipImage.src = shipImages[selectedShip].src;
+
+    // Сброс переменных усиления
+    isSpeedBoostActive = false;
+    normalShipSpeed = shipSpeed;
+
+    // Очистка частиц
+    particles = [];
+
+    // Сброс переменных мерцания текста
+    isTextVisible = true;
+    textFlashTimer = 0;
+
+    // Сброс выстрелов босса
+    bossShots = [];
+
+    // Управление музыкой
+    document.getElementById('musicToggle').checked = isMusicEnabled;
+    if (isMusicEnabled) {
+        playIntroMusic();
+    } else {
+        stopAllMusic();
+    }
+
+    // Синхронизация состояния чекбокса музыки с текущим состоянием
+    document.getElementById('musicToggle').checked = isMusicEnabled;
+
+    console.log('Game initialized with ship:', selectedShip, 'Music enabled:', isMusicEnabled);
 }
 
 
@@ -671,8 +745,8 @@ function draw() {
 
     if (!gameOver) {
         // Отрисовываем корабль игрока
-        if (shipImageLoaded) {
-            ctx.drawImage(shipImage, ship.x, ship.y, ship.width, ship.height);
+        if (shipImages[selectedShip].complete) {
+            ctx.drawImage(shipImages[selectedShip], ship.x, ship.y, ship.width, ship.height);
         } else {
             drawRect(ship.x, ship.y, ship.width, ship.height, ship.color);
         }
@@ -748,7 +822,6 @@ function draw() {
         drawText(`Жизни: ${lives}`, 10, 60);
         drawText(`Рекорд: ${getHighScore()}`, 10, 90);
 
-    
         // Отрисовка индикатора ускорения
         if (isSpeedBoostActive) {
             textFlashTimer++;
@@ -829,44 +902,46 @@ document.addEventListener('keydown', (event) => {
     }
 });
 
-// Заменим существующий код обработки касаний на следующий:
-
-canvas.addEventListener('touchstart', handleTouch, {passive: false});
-canvas.addEventListener('touchmove', handleTouch, {passive: false});
-canvas.addEventListener('touchend', handleTouchEnd, {passive: false});
-
-function handleTouch(event) {
+// Добавляем обработчик касаний для мобильных устройств
+canvas.addEventListener('touchstart', (event) => {
     event.preventDefault();
     if (gameStarted && !gameOver) {
         const touch = event.touches[0];
         const touchX = touch.clientX;
-        const canvasRect = canvas.getBoundingClientRect();
-        const relativeX = touchX - canvasRect.left;
         
-        // Увеличенная скорость движения
-        const moveSpeed = shipSpeed * 2.5; // Увеличено с 2 до 2.5
-
-        if (relativeX < canvas.width / 3) {
+        if (touchX < canvas.width / 2) {
             // Движение влево
-            ship.x = Math.max(0, ship.x - moveSpeed);
-        } else if (relativeX > canvas.width * 2 / 3) {
+            ship.x = Math.max(0, ship.x - shipSpeed);
+        } else {
             // Движение вправо
-            ship.x = Math.min(canvas.width - ship.width, ship.x + moveSpeed);
+            ship.x = Math.min(canvas.width - ship.width, ship.x + shipSpeed);
         }
-
+        
         // Стрельба при каждом касании
-        if (event.type === 'touchstart') {
-            shoot();
-        }
+        shoot();
     } else if (gameOver) {
         startGame();
     }
-}
+}, {passive: false});
 
-function handleTouchEnd(event) {
-    event.preventDefault();
-    // Можно добавить дополнительную логику при необходимости
-}
+// Обновляем обработчики событий для меню настроек
+document.getElementById('openSettings').addEventListener('click', () => {
+    document.getElementById('settingsMenu').style.display = 'block';
+});
+
+document.getElementById('closeSettings').addEventListener('click', () => {
+    document.getElementById('settingsMenu').style.display = 'none';
+});
+
+document.getElementById('shipSelect').addEventListener('change', (e) => {
+    selectedShip = e.target.value;
+});
+
+// Обновленный обработчик события для переключателя музыки
+document.getElementById('musicToggle').addEventListener('change', (e) => {
+    e.preventDefault(); // Предотвращаем стандартное поведение чекбокса
+    toggleMusic();
+});
 
 // Обработчик изменения размера окна
 window.addEventListener('resize', resizeCanvas);
