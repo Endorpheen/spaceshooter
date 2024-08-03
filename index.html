@@ -232,6 +232,8 @@
         let currentSlide = 0;
         const slides = document.querySelectorAll('.slide');
         const gameStartButton = document.getElementById('gameStartButton');
+        const gameOverGif = document.getElementById('gameOverGif');
+        const gameCanvas = document.getElementById('gameCanvas');
 
         function showSlide(index) {
             slides[currentSlide].classList.remove('active');
@@ -251,7 +253,8 @@
 
         function initializeGame() {
             document.getElementById('startScreen').style.display = 'none';
-            document.getElementById('gameCanvas').style.display = 'block';
+            gameCanvas.style.display = 'block';
+            gameOverGif.style.display = 'none'; // Скрыть гифку Game Over
             if (typeof startGame === 'function') {
                 startGame();
             } else {
@@ -259,7 +262,13 @@
             }
         }
 
+        function restartGame() {
+            initializeGame();
+        }
+
         gameStartButton.addEventListener('click', initializeGame);
+        gameOverGif.addEventListener('touchstart', restartGame); // Добавляем обработчик события для касания экрана
+
     </script>
     <script src="game.js"></script>
 </body>
