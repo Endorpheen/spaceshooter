@@ -159,6 +159,30 @@ const bossState = {
 
 bossState.bossImage.src = 'images/boss.png'; // Убедитесь, что у вас есть изображение босса
 
+const fightSound = document.getElementById('fightSound');
+const holyShitSound = document.getElementById('holyShitSound');
+const humiliationSound = document.getElementById('humiliationSound');
+const invisibilitySound = document.getElementById('invisibilitySound');
+
+function playFightSound() {
+    fightSound.currentTime = 0;
+    fightSound.play().catch(error => console.error("Ошибка воспроизведения звука боя:", error));
+}
+
+function playHolyShitSound() {
+    holyShitSound.currentTime = 0;
+    holyShitSound.play().catch(error => console.error("Ошибка воспроизведения звука 'holy shit':", error));
+}
+
+function playHumiliationSound() {
+    humiliationSound.currentTime = 0;
+    humiliationSound.play().catch(error => console.error("Ошибка воспроизведения звука унижения:", error));
+}
+
+function playInvisibilitySound() {
+    invisibilitySound.currentTime = 0;
+    invisibilitySound.play().catch(error => console.error("Ошибка воспроизведения звука невидимости:", error));
+}
 
 // Функция для управления музыкой!
 function toggleMusic() {
@@ -500,7 +524,8 @@ function collectPowerUp(powerUp) {
 
 function activateShield() {
     ship.shield = true;
-    ship.shieldTime = 10000; // Щит действует 10 секунд
+    ship.shieldTime = 10000;
+    playInvisibilitySound();
     setTimeout(() => {
         ship.shield = false;
     }, ship.shieldTime);
@@ -543,9 +568,12 @@ function getFontSize() {
 // Функция для создания босса
 function createBoss() {
     console.log('Создание босса');
+    const sounds = [playFightSound, playHolyShitSound];
+    const randomSound = sounds[Math.floor(Math.random() * sounds.length)];
+    randomSound();
     return {
         x: canvas.width / 2 - 75,
-        y: 50,  // Изменено с -150 на 50, чтобы босс был виден сразу
+        y: 50,
         width: 150,
         height: 150,
         health: 100,
@@ -656,14 +684,13 @@ function defeatedBoss() {
     if (bossState.boss) {
         score += bossState.bossDefeatBonus;
         createExplosion(bossState.boss.x + bossState.boss.width / 2, bossState.boss.y + bossState.boss.height / 2);
+        playHumiliationSound();
     }
     bossState.isBossFight = false;
-    bossState.bossDefeated = false;  // Изменено с true на false
+    bossState.bossDefeated = false;
     bossState.boss = null;
-    bossState.nextBossScore = score + bossState.bossAppearanceScore;  // Устанавливаем счет для следующего босса
-    enemies = [];  // Очищаем массив врагов после победы над боссом
-
-    // Очистка пуль босса
+    bossState.nextBossScore = score + bossState.bossAppearanceScore;
+    enemies = [];
     bossShots = [];
     console.log('Босс побежден, пули босса очищены');
 }   
@@ -986,28 +1013,20 @@ function draw() {
 
         // Отрисовка отладочной информации
         drawText(bossState.debugInfo, 10, canvas.height - 20, '14px', 'white', 'left');
-        
     } else {
         // Отображаем GIF Game Over
         const gameOverGif = document.getElementById('gameOverGif');
         gameOverGif.style.display = 'block';
-    
+
         // Отрисовываем текст поверх GIF
         ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';  // Полупрозрачный черный фон для текста
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
-        // Убираем белую надпись "GAME OVER"
-        // drawText('GAME OVER', canvas.width / 2, canvas.height / 2 - 60, '48px', 'white', 'center');
-        
-        // Увеличиваем шрифт для очков и рекорда
-        drawText(`Очки: ${score}`, canvas.width / 2, canvas.height / 2 - 30, '36px', 'white', 'center');
-        drawText(`Рекорд: ${getHighScore()}`, canvas.width / 2, canvas.height / 2 + 30, '36px', 'white', 'center');
-        
-        // Обновляем инструкцию для перезапуска
-        drawText('Нажмите пробел или коснитесь экрана для перезапуска', canvas.width / 2, canvas.height / 2 + 90, '24px', 'white', 'center');
-        
-        // Убираем упоминание об отправке счета в Telegram
-        // drawText('Нажмите T, чтобы отправить счет в Telegram', canvas.width / 2, canvas.height / 2 + 120, getFontSize(), 'white', 'center');
+        drawText('GAME OVER', canvas.width / 2, canvas.height / 2 - 60, '48px', 'white', 'center');
+        drawText(`Очки: ${score}`, canvas.width / 2, canvas.height / 2, '24px', 'white', 'center');
+        drawText(`Рекорд: ${getHighScore()}`, canvas.width / 2, canvas.height / 2 + 40, '24px', 'white', 'center');
+        drawText('Нажмите пробел для перезапуска', canvas.width / 2, canvas.height / 2 + 80, getFontSize(), 'white', 'center');
+        drawText('Нажмите T, чтобы отправить счет в Telegram', canvas.width / 2, canvas.height / 2 + 120, getFontSize(), 'white', 'center');
     }
 
     // Отрисовка экрана паузы
