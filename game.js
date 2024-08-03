@@ -1021,6 +1021,10 @@ canvas.addEventListener('touchend', handleTouchEnd, {passive: false});
 
 function handleTouch(event) {
     event.preventDefault();
+    if (gameOver) {
+        startGame();
+        return;
+    }
     if (gameStarted && !gameOver) {
         const touch = event.touches[0];
         const touchX = touch.clientX;
@@ -1042,8 +1046,6 @@ function handleTouch(event) {
         if (event.type === 'touchstart') {
             shoot();
         }
-    } else if (gameOver) {
-        startGame();
     }
 }
 
@@ -1062,6 +1064,13 @@ document.getElementById('closeSettings').addEventListener('click', () => {
     document.getElementById('settingsMenu').style.display = 'none';
     resumeGame();
 });
+
+document.addEventListener('touchstart', function(event) {
+    if (gameOver) {
+        event.preventDefault();
+        startGame();
+    }
+}, {passive: false});
 
 // Обновленный обработчик события для выбора корабля
 document.getElementById('shipSelect').addEventListener('change', (e) => {
