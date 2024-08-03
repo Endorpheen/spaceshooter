@@ -844,7 +844,9 @@ function draw() {
             // Отрисовка щита
             if (ship.shield) {
                 ctx.beginPath();
-                ctx.arc(ship.x + ship.width / 2, ship.y + ship.height / 2, ship.width / 1.5, 0, Math.PI * 2);
+                // Увеличиваем радиус щита, чтобы он полностью покрывал корабль
+                let shieldRadius = Math.max(ship.width, ship.height) * 0.75;
+                ctx.arc(ship.x + ship.width / 2, ship.y + ship.height / 2, shieldRadius, 0, Math.PI * 2);
                 ctx.strokeStyle = 'rgba(0, 255, 255, 0.7)';
                 ctx.lineWidth = 3;
                 ctx.stroke();
