@@ -410,12 +410,14 @@ function createEnemy() {
 // Функция для создания усиления
 // Обновленная функция createPowerUp
 function createPowerUp() {
+    const types = ['speedBoost', 'shield'];
+    const type = types[Math.floor(Math.random() * types.length)];
     return {
         x: Math.random() * (canvas.width - 30),
         y: -30,
         width: 30,
         height: 30,
-        type: 'speedBoost',
+        type: type,
         speed: 2
     };
 }
@@ -424,8 +426,17 @@ function createPowerUp() {
 function collectPowerUp(powerUp) {
     if (powerUp.type === 'speedBoost') {
         activateSpeedBoost();
+    } else if (powerUp.type === 'shield') {
+        activateShield();
     }
-    // Добавьте больше типов усилений здесь в будущем
+}
+
+function activateShield() {
+    ship.shield = true;
+    ship.shieldTime = 10000; // Щит действует 10 секунд
+    setTimeout(() => {
+        ship.shield = false;
+    }, ship.shieldTime);
 }
 
 // Функция для активации ускорения
@@ -639,20 +650,29 @@ function update() {
                 ship.y < enemies[i].y + enemies[i].height &&
                 ship.y + ship.height > enemies[i].y
             ) {
-                createExplosion(enemies[i].x + enemies[i].width / 2, enemies[i].y + enemies[i].height / 2);
-                explosionSound.currentTime = 0;
-                explosionSound.play().catch(error => console.error("Ошибка воспроизведения звука взрыва:", error));
-                enemies.splice(i, 1);
-                lives--;
-                if (lives <= 0) {
-                    gameOver = true;
-                    saveHighScore(score);
-                    console.log('Game Over triggered');
-                    
-                    if (isMusicPlaying) {
-                        stopAllMusic();
-                        playGameOverMusic();
+                if (!ship.shield) {
+                    createExplosion(enemies[i].x + enemies[i].width / 2, enemies[i].y + enemies[i].height / 2);
+                    explosionSound.currentTime = 0;
+                    explosionSound.play().catch(error => console.error("Ошибка воспроизведения звука взрыва:", error));
+                    enemies.splice(i, 1);
+                    lives--;
+                    if (lives <= 0) {
+                        gameOver = true;
+                        saveHighScore(score);
+                        console.log('Game Over triggered');
+                        
+                        if (isMusicPlaying) {
+                            stopAllMusic();
+                            playGameOverMusic();
+                        }
                     }
+                } else {
+                    // Если есть щит, уничтожаем врага без потери жизни
+                    createExplosion(enemies[i].x + enemies[i].width / 2, enemies[i].y + enemies[i].height / 2);
+                    explosionSound.currentTime = 0;
+                    explosionSound.play().catch(error => console.error("Ошибка воспроизведения звука взрыва:", error));
+                    enemies.splice(i, 1);
+                    score++; // Можно добавить очки за уничтожение врага щитом
                 }
                 continue;
             }
@@ -703,12 +723,18 @@ function update() {
                 ship.y < bossShots[i].y + bossShots[i].height &&
                 ship.y + ship.height > bossShots[i].y
             ) {
-                createExplosion(ship.x + ship.width / 2, ship.y + ship.height / 2);
-                bossShots.splice(i, 1);
-                lives--;
-                if (lives <= 0) {
-                    gameOver = true;
-                    saveHighScore(score);
+                if (!ship.shield) {
+                    createExplosion(ship.x + ship.width / 2, ship.y + ship.height / 2);
+                    bossShots.splice(i, 1);
+                    lives--;
+                    if (lives <= 0) {
+                        gameOver = true;
+                        saveHighScore(score);
+                    }
+                } else {
+                    // Если есть щит, просто уничтожаем выстрел босса
+                    createExplosion(bossShots[i].x, bossShots[i].y);
+                    bossShots.splice(i, 1);
                 }
             }
         }
@@ -748,6 +774,14 @@ function update() {
             textFlashTimer = 0;
         }
     }
+
+    // Обновление времени действия щита
+    if (ship.shield) {
+        ship.shieldTime -= 16; // Предполагая, что игра работает с 60 FPS
+        if (ship.shieldTime <= 0) {
+            ship.shield = false;
+        }
+    }
 }
 
 function draw() {
@@ -774,6 +808,15 @@ function draw() {
         // Отрисовываем корабль игрока
         if (shipImages[selectedShip].complete) {
             ctx.drawImage(shipImages[selectedShip], ship.x, ship.y, ship.width, ship.height);
+            
+            // Отрисовка щита
+            if (ship.shield) {
+                ctx.beginPath();
+                ctx.arc(ship.x + ship.width / 2, ship.y + ship.height / 2, ship.width / 1.5, 0, Math.PI * 2);
+                ctx.strokeStyle = 'rgba(0, 255, 255, 0.7)';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+            }
         } else {
             drawRect(ship.x, ship.y, ship.width, ship.height, ship.color);
         }
@@ -856,6 +899,18 @@ function draw() {
             if (isTextVisible) {
                 drawText('Пилоту Хорошо', canvas.width / 2, 60, getFontSize(), 'yellow', 'center');
             }
+        }
+
+        // Отрисовка индикатора щита
+        if (ship.shield) {
+            const shieldPercentage = ship.shieldTime / 10000; // 10000 - это начальное время щита
+            const shieldBarWidth = 100;
+            const shieldBarHeight = 10;
+            ctx.fillStyle = 'rgba(0, 255, 255, 0.7)';
+            ctx.fillRect(10, 120, shieldBarWidth * shieldPercentage, shieldBarHeight);
+            ctx.strokeStyle = 'white';
+            ctx.strokeRect(10, 120, shieldBarWidth, shieldBarHeight);
+            drawText('Щит', 10, 115, '14px', 'white', 'left');
         }
 
         // Отрисовка отладочной информации
