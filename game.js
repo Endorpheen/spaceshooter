@@ -986,20 +986,28 @@ function draw() {
 
         // Отрисовка отладочной информации
         drawText(bossState.debugInfo, 10, canvas.height - 20, '14px', 'white', 'left');
+        
     } else {
         // Отображаем GIF Game Over
         const gameOverGif = document.getElementById('gameOverGif');
         gameOverGif.style.display = 'block';
-
+    
         // Отрисовываем текст поверх GIF
         ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';  // Полупрозрачный черный фон для текста
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
-        drawText('GAME OVER', canvas.width / 2, canvas.height / 2 - 60, '48px', 'white', 'center');
-        drawText(`Очки: ${score}`, canvas.width / 2, canvas.height / 2, '24px', 'white', 'center');
-        drawText(`Рекорд: ${getHighScore()}`, canvas.width / 2, canvas.height / 2 + 40, '24px', 'white', 'center');
-        drawText('Нажмите пробел для перезапуска', canvas.width / 2, canvas.height / 2 + 80, getFontSize(), 'white', 'center');
-        drawText('Нажмите T, чтобы отправить счет в Telegram', canvas.width / 2, canvas.height / 2 + 120, getFontSize(), 'white', 'center');
+        // Убираем белую надпись "GAME OVER"
+        // drawText('GAME OVER', canvas.width / 2, canvas.height / 2 - 60, '48px', 'white', 'center');
+        
+        // Увеличиваем шрифт для очков и рекорда
+        drawText(`Очки: ${score}`, canvas.width / 2, canvas.height / 2 - 30, '36px', 'white', 'center');
+        drawText(`Рекорд: ${getHighScore()}`, canvas.width / 2, canvas.height / 2 + 30, '36px', 'white', 'center');
+        
+        // Обновляем инструкцию для перезапуска
+        drawText('Нажмите пробел или коснитесь экрана для перезапуска', canvas.width / 2, canvas.height / 2 + 90, '24px', 'white', 'center');
+        
+        // Убираем упоминание об отправке счета в Telegram
+        // drawText('Нажмите T, чтобы отправить счет в Telegram', canvas.width / 2, canvas.height / 2 + 120, getFontSize(), 'white', 'center');
     }
 
     // Отрисовка экрана паузы
