@@ -1086,6 +1086,20 @@ gameOverGif.onerror = function() {
   console.error('Ошибка загрузки GIF');
 };
 
+// Обработчик касаний для перезапуска игры
+canvas.addEventListener('touchstart', (event) => {
+    event.preventDefault();
+    if (gameOver) {
+        startGame();
+    }
+});
+
+// Обработчик касаний для кнопки настроек
+document.getElementById('openSettings').addEventListener('touchstart', () => {
+    document.getElementById('settingsMenu').style.display = 'block';
+    pauseGame();
+});
+
 // Добавляем слушатель событий на кнопку "Начать игру"
 startButton.addEventListener('click', startGame);
 
