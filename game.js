@@ -816,6 +816,7 @@ function update() {
     }
 }
 
+// Функция для отрисовки
 function draw() {
     // Очищаем canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
