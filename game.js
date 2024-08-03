@@ -273,6 +273,7 @@ function changeShip(newShip) {
 function startGame() {
     console.log('Starting game');
     gameStarted = true;
+    gameOver = false;
     startScreen.style.display = 'none';
     canvas.style.display = 'block';
     resizeCanvas();
@@ -282,6 +283,37 @@ function startGame() {
         gameLoop();
     }
     playIntroMusic();
+
+    // Скрываем GIF Game Over
+    document.getElementById('gameOverGif').style.display = 'none';
+
+    // Сброс игровых переменных
+    score = 0;
+    lives = 3;
+    enemies = [];
+    bullets = [];
+    powerUps = [];
+    bossState.isBossFight = false;
+    bossState.boss = null;
+    bossState.nextBossScore = bossState.bossAppearanceScore;
+
+    // Создание начальных врагов
+    for (let i = 0; i < 5; i++) {
+        enemies.push(createEnemy());
+    }
+
+    // Сброс позиции корабля игрока
+    ship.x = canvas.width / 2 - ship.width / 2;
+    ship.y = canvas.height - ship.height - 10;
+
+    // Сброс усилений
+    isSpeedBoostActive = false;
+    ship.shield = false;
+
+    // Очистка частиц
+    particles = [];
+
+    console.log('Game initialized');
 }
 
 // Функция инициализации игры
@@ -916,15 +948,14 @@ function draw() {
         // Отрисовка отладочной информации
         drawText(bossState.debugInfo, 10, canvas.height - 20, '14px', 'white', 'left');
     } else {
-        // Отрисовываем экран Game Over
-        if (gameOverImage.complete) {
-            ctx.drawImage(gameOverImage, 0, 0, canvas.width, canvas.height);
-        } else {
-            ctx.fillStyle = 'black';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-        }
+        // Отображаем GIF Game Over
+        const gameOverGif = document.getElementById('gameOverGif');
+        gameOverGif.style.display = 'block';
 
-        // Отрисовываем текст поверх фона
+        // Отрисовываем текст поверх GIF
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';  // Полупрозрачный черный фон для текста
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
         drawText('GAME OVER', canvas.width / 2, canvas.height / 2 - 60, '48px', 'white', 'center');
         drawText(`Очки: ${score}`, canvas.width / 2, canvas.height / 2, '24px', 'white', 'center');
         drawText(`Рекорд: ${getHighScore()}`, canvas.width / 2, canvas.height / 2 + 40, '24px', 'white', 'center');
@@ -941,11 +972,6 @@ function draw() {
         ctx.textAlign = 'center';
         ctx.fillText('ПАУЗА', canvas.width / 2, canvas.height / 2);
     }
-}
-
-// Функция для отправки счета в Telegram
-function sendScoreToTelegram() {
-    tg.sendData(JSON.stringify({score: score}));
 }
 
 // Игровой цикл
@@ -1050,6 +1076,15 @@ document.getElementById('musicToggle').addEventListener('change', (e) => {
 
 // Обработчик изменения размера окна
 window.addEventListener('resize', resizeCanvas);
+
+// Обработчик событий для проверки загрузки изображения:
+const gameOverGif = document.getElementById('gameOverGif');
+gameOverGif.onload = function() {
+  console.log('GIF загружен успешно');
+};
+gameOverGif.onerror = function() {
+  console.error('Ошибка загрузки GIF');
+};
 
 // Добавляем слушатель событий на кнопку "Начать игру"
 startButton.addEventListener('click', startGame);
