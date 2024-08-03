@@ -816,7 +816,6 @@ function update() {
     }
 }
 
-// Функция для отрисовки
 function draw() {
     // Очищаем canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -962,9 +961,6 @@ function draw() {
         drawText(`Рекорд: ${getHighScore()}`, canvas.width / 2, canvas.height / 2 + 40, '24px', 'white', 'center');
         drawText('Нажмите пробел для перезапуска', canvas.width / 2, canvas.height / 2 + 80, getFontSize(), 'white', 'center');
         drawText('Нажмите T, чтобы отправить счет в Telegram', canvas.width / 2, canvas.height / 2 + 120, getFontSize(), 'white', 'center');
-
-        // Отображаем кнопку настроек на экране Game Over
-        document.getElementById('openSettings').style.display = 'block';
     }
 
     // Отрисовка экрана паузы
@@ -1089,20 +1085,6 @@ gameOverGif.onload = function() {
 gameOverGif.onerror = function() {
   console.error('Ошибка загрузки GIF');
 };
-
-// Обработчик касаний для перезапуска игры
-canvas.addEventListener('touchstart', (event) => {
-    event.preventDefault();
-    if (gameOver) {
-        startGame();
-    }
-});
-
-// Обработчик касаний для кнопки настроек
-document.getElementById('openSettings').addEventListener('touchstart', () => {
-    document.getElementById('settingsMenu').style.display = 'block';
-    pauseGame();
-});
 
 // Добавляем слушатель событий на кнопку "Начать игру"
 startButton.addEventListener('click', startGame);
