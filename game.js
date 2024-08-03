@@ -961,6 +961,9 @@ function draw() {
         drawText(`Рекорд: ${getHighScore()}`, canvas.width / 2, canvas.height / 2 + 40, '24px', 'white', 'center');
         drawText('Нажмите пробел для перезапуска', canvas.width / 2, canvas.height / 2 + 80, getFontSize(), 'white', 'center');
         drawText('Нажмите T, чтобы отправить счет в Telegram', canvas.width / 2, canvas.height / 2 + 120, getFontSize(), 'white', 'center');
+
+        // Отображаем кнопку настроек на экране Game Over
+        document.getElementById('openSettings').style.display = 'block';
     }
 
     // Отрисовка экрана паузы
