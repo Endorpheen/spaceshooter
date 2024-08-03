@@ -52,6 +52,10 @@ backgroundImage.src = 'images/background.jpg';
 const enemyImage = new Image();
 enemyImage.src = 'images/enemy.png';
 
+// Загрузка изображения щита
+const shieldBaseImage = new Image();
+shieldBaseImage.src = 'images/shieldimage.png';
+
 // Загружаем изображение для экрана Game Over
 const gameOverImage = new Image();
 gameOverImage.src = 'images/gas-kvas-com-p-oboi-s-nadpisyu-konets-igri-36.jpg';
@@ -243,6 +247,37 @@ function playShotSound() {
     shotSound.play().catch(error => {
         console.error("Ошибка воспроизведения звука выстрела:", error);
     });
+}
+
+// Функция для отрисовки щита
+let shieldAngle = 0;
+const shieldSegments = 20; // Количество сегментов в щите
+
+function drawShield(x, y, radius) {
+    ctx.save();
+    ctx.translate(x, y);
+    
+    // Рисуем базовое изображение щита
+    ctx.drawImage(shieldBaseImage, -radius, -radius, radius * 2, radius * 2);
+    
+    // Рисуем анимированные сегменты
+    ctx.strokeStyle = 'rgba(0, 255, 255, 0.7)';
+    ctx.lineWidth = 3;
+    
+    for (let i = 0; i < shieldSegments; i++) {
+        const segmentAngle = (Math.PI * 2 / shieldSegments) * i + shieldAngle;
+        const startX = Math.cos(segmentAngle) * radius;
+        const startY = Math.sin(segmentAngle) * radius;
+        const endX = Math.cos(segmentAngle) * (radius - 10); // Длина сегмента
+        const endY = Math.sin(segmentAngle) * (radius - 10);
+        
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(endX, endY);
+        ctx.stroke();
+    }
+    
+    ctx.restore();
 }
 
 // Функция для сохранения высокого счета
@@ -814,6 +849,9 @@ function update() {
             ship.shield = false;
         }
     }
+
+    // Анимация щита
+    shieldAngle += 0.05; // Скорость вращения
 }
 
 function draw() {
@@ -843,13 +881,12 @@ function draw() {
             
             // Отрисовка щита
             if (ship.shield) {
-                ctx.beginPath();
-                // Увеличиваем радиус щита, чтобы он полностью покрывал корабль
-                let shieldRadius = Math.max(ship.width, ship.height) * 0.75;
-                ctx.arc(ship.x + ship.width / 2, ship.y + ship.height / 2, shieldRadius, 0, Math.PI * 2);
-                ctx.strokeStyle = 'rgba(0, 255, 255, 0.7)';
-                ctx.lineWidth = 3;
-                ctx.stroke();
+                const shieldSize = Math.max(ship.width, ship.height) * 1.5;
+                drawShield(
+                    ship.x + ship.width / 2,
+                    ship.y + ship.height / 2,
+                    shieldSize / 2
+                );
             }
         } else {
             drawRect(ship.x, ship.y, ship.width, ship.height, ship.color);
