@@ -71,24 +71,24 @@
         }
         .slide-content img {
             width: 100%;
-            max-height: 70vh;
+            max-height: 60vh; /* Уменьшено с 70vh */
             object-fit: contain;
             border-radius: 10px;
         }
         .slide-caption {
-            margin-top: 20px;
-            font-size: 18px;
+            margin-top: 10px; /* Уменьшено с 20px */
+            font-size: 16px; /* Немного уменьшен размер шрифта */
             text-align: center;
             background-color: rgba(0, 0, 0, 0.7);
-            padding: 10px;
+            padding: 8px;
             border-radius: 5px;
             max-width: 80%;
         }
         #gameStartButton {
             position: absolute;
-            bottom: 30px;
-            padding: 15px 30px;
-            font-size: 20px;
+            bottom: 40px; /* Увеличено с 30px */
+            padding: 12px 25px; /* Немного уменьшены отступы */
+            font-size: 18px; /* Немного уменьшен размер шрифта */
             background-color: #4CAF50;
             color: white;
             border: none;
@@ -122,7 +122,7 @@
             font-size: 28px;
             font-weight: bold;
             text-align: center;
-            margin-top: 40px;
+            margin-top: 20px; /* Уменьшено с 40px */
             text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
             padding: 0 10px;
         }
@@ -172,9 +172,27 @@
             border-radius: 5px;
             cursor: pointer;
             z-index: 1001; /* Убедитесь, что это значение больше, чем у GIF */
-        }    
-        #gameOverGif {pointer-events: none;
+        }  
+        #gameOverGif {
+            pointer-events: none;
+        }  
+        @media (max-height: 600px) {
+        .game-title {
+            font-size: 24px;
+            margin-top: 10px;
         }
+        .slide-content img {
+            max-height: 50vh;
+        }
+        .slide-caption {
+            font-size: 14px;
+        }
+        #gameStartButton {
+            bottom: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+    }
     </style>
 </head>
 <body>
