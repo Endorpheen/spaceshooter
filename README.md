@@ -54,11 +54,9 @@
 1. Убедитесь, что у вас установлен Docker (если нет, самое время познакомиться с этим чудом техники!)
 2. Выполните волшебное заклинание в терминале:
    
-   bash
-   docker pull end000/spaceshooterbackend:latest
+   `docker pull end000/spaceshooterbackend:latest`
    
-   bash
-   docker run -d -p 8080:8080 end000/spaceshooterbackend:latest
+   `docker run -d -p 8080:8080 end000/spaceshooterbackend:latest`
    
 4. Поздравляем! Вы только что открыли портал в мир ИИ-assistant gaming!
 
