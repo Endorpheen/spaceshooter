@@ -28,7 +28,7 @@ __pycache__/
 *.pyc
 
 # Игнорируем файлы Docker
-Dockerfile
+#Dockerfile
 .dockerignore
 
 # Игнорируем конфиги сервера (если есть)
