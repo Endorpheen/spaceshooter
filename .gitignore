@@ -1,0 +1,40 @@
+# Игнорируем node_modules везде
+node_modules/
+
+# Игнорируем файлы сборки
+/build
+/dist
+
+# Игнорируем файлы с конфигурацией окружения
+.env
+
+# Игнорируем логи
+*.log
+
+# Игнорируем временные файлы
+*.tmp
+
+# Игнорируем файлы IDE
+.vscode/
+.idea/
+
+# Игнорируем модели машинного обучения
+/game-api/models/*.bin
+/game-api/models/*.pkl
+/game-api/models/*.gguf
+
+# Игнорируем кэш Python
+__pycache__/
+*.pyc
+
+# Игнорируем файлы Docker
+Dockerfile
+.dockerignore
+
+# Игнорируем конфиги сервера (если есть)
+/game-api/config.js
+/game-api/secrets.json
+
+# Игнорируем временные файлы ОС
+.DS_Store
+Thumbs.db
