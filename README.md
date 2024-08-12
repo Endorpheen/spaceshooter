@@ -56,7 +56,7 @@
    
    ```docker pull end000/spaceshooterbackend:latest```
    
-   ```docker run -d -p 8080:8080 end000/spaceshooterbackend:latest```
+   ```docker run -d -p 3008:3008 end000/spaceshooterbackend:latest```
    
 4. Поздравляем! Вы только что открыли портал в мир ИИ-assistant gaming!
 
