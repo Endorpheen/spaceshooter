@@ -15,13 +15,13 @@
 #      uses: actions/checkout@v3
 
 #    - name: Log in to Docker Hub
-      uses: docker/login-action@v2
-      with:
-        username: ${{ secrets.DOCKER_HUB_USERNAME }}
-        password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+#      uses: docker/login-action@v2
+#      with:
+#        username: ${{ secrets.DOCKER_HUB_USERNAME }}
+#        password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
 #    - name: Pull Docker image
-      run: docker pull end000/spaceshooterbackend:latest
+#      run: docker pull end000/spaceshooterbackend:latest
 
 #    - name: Run Trivy vulnerability scanner
 #      uses: aquasecurity/trivy-action@master
