@@ -1170,5 +1170,36 @@ window.addEventListener('load', () => {
     // Начальный экран уже отображается благодаря HTML структуре
 });
 
+// ВСТАВЬТЕ НОВЫЙ КОД ЗДЕСЬ
+// Добавляем функцию создания кнопки чата
+function createChatButton() {
+    const chatButton = document.createElement('button');
+    chatButton.textContent = 'AI Помощник';
+    chatButton.style.position = 'absolute';
+    chatButton.style.bottom = '10px';  // Изменено с 'top' на 'bottom'
+    chatButton.style.right = '10px';
+    chatButton.style.zIndex = '1000';  // Добавлено для уверенности, что кнопка будет поверх других элементов
+    chatButton.style.padding = '10px';
+    chatButton.style.backgroundColor = '#4CAF50';
+    chatButton.style.color = 'white';
+    chatButton.style.border = 'none';
+    chatButton.style.borderRadius = '5px';
+    chatButton.style.cursor = 'pointer';
+    chatButton.addEventListener('click', openChatInterface);
+    document.body.appendChild(chatButton);
+  }
+  
+  function openChatInterface() {
+    window.open('http://localhost:3008', 'AI Assistant', 'width=400,height=600');
+  }
+  
+  // Вызываем функцию создания кнопки чата после инициализации игры
+  window.addEventListener('load', () => {
+      resizeCanvas();
+      createChatButton();
+      // Начальный экран уже отображается благодаря HTML структуре
+  });
+  // КОНЕЦ НОВОГО КОДА
+
 // Добавляем обработчик для воспроизведения музыки при первом взаимодействии с страницей
 window.addEventListener('click', playIntroMusic, { once: true });
